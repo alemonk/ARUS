@@ -4,7 +4,7 @@ import numpy as np
 import glob
 import os
 
-def capture_checkerboard_images(num_images=10, save_path="calibration_images/"):
+def capture_checkerboard_images(num_images=10, save_path="camera_calibration/"):
     # Configure depth and color streams
     pipeline = rs.pipeline()
     config = rs.config()
@@ -16,26 +16,35 @@ def capture_checkerboard_images(num_images=10, save_path="calibration_images/"):
     if not os.path.exists(save_path):
         os.makedirs(save_path)
     
-    for i in range(num_images):
-        # Wait for a coherent pair of frames: depth and color
-        frames = pipeline.wait_for_frames()
-        color_frame = frames.get_color_frame()
-        
-        if not color_frame:
-            continue
-        
-        # Convert images to numpy arrays
-        color_image = np.asanyarray(color_frame.get_data())
-        
-        # Save the image
-        cv2.imwrite(f"{save_path}/image-{i}.png", color_image)
-        
-        # Display the image
-        cv2.imshow('Checkerboard Image', color_image)
-        cv2.waitKey(500)  # Wait 500 milliseconds between captures
+    image_count = 0
+    print("Press 'c' to capture an image. Press 'q' to quit.")
     
-    pipeline.stop()
-    cv2.destroyAllWindows()
+    try:
+        while image_count < num_images:
+            # Wait for a coherent pair of frames: depth and color
+            frames = pipeline.wait_for_frames()
+            color_frame = frames.get_color_frame()
+            
+            if not color_frame:
+                continue
+            
+            # Convert images to numpy arrays
+            color_image = np.asanyarray(color_frame.get_data())
+            
+            # Display the image
+            cv2.imshow('Checkerboard Image', color_image)
+            
+            # Wait for key press
+            key = cv2.waitKey(1) & 0xFF
+            if key == ord('c'):  # Press 'c' to capture the image
+                cv2.imwrite(f"{save_path}/image-{image_count}.png", color_image)
+                print(f"Captured image-{image_count}.png")
+                image_count += 1
+            elif key == ord('q'):  # Press 'q' to quit
+                break
+    finally:
+        pipeline.stop()
+        cv2.destroyAllWindows()
 
 def calibrate_camera(image_folder, checkerboard_size=(9, 6), square_size=0.025):
     # Termination criteria for corner sub-pixel accuracy
@@ -81,14 +90,14 @@ def calibrate_camera(image_folder, checkerboard_size=(9, 6), square_size=0.025):
         print("Distortion coefficients:\n", dist_coeffs)
     
     # Save the calibration results
-    np.save("camera_matrix.npy", camera_matrix)
-    np.save("dist_coeffs.npy", dist_coeffs)
+    np.save("camera_calibration/camera_matrix.npy", camera_matrix)
+    np.save("camera_calibration/dist_coeffs.npy", dist_coeffs)
     
     return camera_matrix, dist_coeffs
 
 if __name__ == "__main__":
     # Step 1: Capture images using RealSense camera
-    # capture_checkerboard_images(num_images=20, save_path="calibration_images/")
+    # capture_checkerboard_images(num_images=10, save_path="camera_calibration/")
     
     # Step 2: Calibrate camera using the captured images
-    calibrate_camera(image_folder="calibration_images", checkerboard_size=(9, 6), square_size=0.025)
+    calibrate_camera(image_folder="camera_calibration", checkerboard_size=(9, 6), square_size=0.025)
