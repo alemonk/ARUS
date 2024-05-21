@@ -1,4 +1,8 @@
-camera_calibration/
-robot_calibration/
-camera_matrix.npy
-dist_coeffs.npy
+calibration/camera_calibration/
+calibration/robot_calibration/
+calibration/camera_matrix.npy
+calibration/dist_coeffs.npy
+
+stitching/stitched_output.png
+
+myenv/
