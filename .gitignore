@@ -6,3 +6,4 @@ calibration/dist_coeffs.npy
 stitching/stitched_output.png
 
 myenv/
+.DS_Store
