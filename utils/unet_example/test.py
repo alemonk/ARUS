@@ -9,16 +9,17 @@ import time
 import copy
 from unet import UNet
 from utils import generate_random_data, plot_side_by_side, masks_to_colorimg, reverse_transform
+import os
 
 # PARAMETERS
-num_epochs = 10
+num_epochs = 20
 lr = 1e-4
 # Train
-train_count = 80
-val_count = 20
+train_count = 150
+val_count = 50
 batch_size = 10
 # Test
-test_count = 10
+test_count = 100
 test_batch_size = 3
 
 class SimDataset(Dataset):
@@ -94,7 +95,12 @@ def print_metrics(metrics, epoch_samples, phase):
     print("{}: {}".format(phase, ", ".join(outputs)))
 
 
-def train_model(model, optimizer, scheduler, num_epochs=25):
+def load_model(model, model_load_path='utils/unet_example/best_model.pth'):
+    model.load_state_dict(torch.load(model_load_path))
+    return model
+
+
+def train_model(model, optimizer, scheduler, num_epochs=25, model_save_path='utils/unet_example/best_model.pth'):
     dataloaders = get_data_loaders(train_count, val_count, batch_size)
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     best_model_wts = copy.deepcopy(model.state_dict())
@@ -149,6 +155,7 @@ def train_model(model, optimizer, scheduler, num_epochs=25):
                 print("saving best model")
                 best_loss = epoch_loss
                 best_model_wts = copy.deepcopy(model.state_dict())
+                torch.save(best_model_wts, model_save_path)  # Save the model
 
         time_elapsed = time.time() - since
         print('{:.0f}m {:.0f}s'.format(time_elapsed // 60, time_elapsed % 60))
@@ -160,18 +167,31 @@ def train_model(model, optimizer, scheduler, num_epochs=25):
     return model
 
 
-def run(UNet):
+def run(UNet, model_save_path='utils/unet_example/best_model.pth'):
     num_class = 6
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     model = UNet(num_class).to(device)
-    optimizer_ft = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr)
-    exp_lr_scheduler = lr_scheduler.StepLR(optimizer_ft, step_size=30, gamma=0.1)
-    model = train_model(model, optimizer_ft, exp_lr_scheduler, num_epochs)
-    model.eval()  # Set model to the evaluation mode
+
+    if os.path.exists(model_save_path):
+        load_choice = input("Model file found. Do you want to load the existing model? (yes/no): ").strip().lower()
+        if load_choice == 'yes' or load_choice == 'y':
+            model = load_model(model, model_save_path)
+            print("Loaded existing model.")
+        else:
+            print("Training a new model.")
+            optimizer_ft = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr)
+            exp_lr_scheduler = lr_scheduler.StepLR(optimizer_ft, step_size=30, gamma=0.1)
+            model = train_model(model, optimizer_ft, exp_lr_scheduler, num_epochs, model_save_path)
+    else:
+        print("No existing model found. Training a new model.")
+        optimizer_ft = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr)
+        exp_lr_scheduler = lr_scheduler.StepLR(optimizer_ft, step_size=30, gamma=0.1)
+        model = train_model(model, optimizer_ft, exp_lr_scheduler, num_epochs, model_save_path)
+
+    model.eval()  # Set model to evaluation mode
 
     trans = transforms.Compose([
-
         transforms.ToTensor(),
         transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])  # imagenet
     ])

@@ -8,3 +8,4 @@ stitching/stitched_output.png
 myenv/
 .DS_Store
 __pycache__
+best_model.pth
