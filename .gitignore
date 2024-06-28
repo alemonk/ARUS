@@ -3,7 +3,18 @@ calibration/robot_calibration/
 calibration/camera_matrix.npy
 calibration/dist_coeffs.npy
 
-stitching/stitched_output.png
+ds/forearm-dorsal-dataset
+ds/test
+ds/test_forearm
+ds/train
+ds/validation
+
+recon/img_pose.txt
+recon/pointcloud.txt
+
+segm/test_forearm_results
+segm/test_results
+segm/best_model.model
 
 myenv/
 .DS_Store
