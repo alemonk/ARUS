@@ -19,6 +19,12 @@ segm/test_forearm_results
 segm/test_results
 segm/best_model.model
 
+ros/src/my_package/src/test_forearm/
+ros/src/my_package/src/test_forearm_results/
+ros/src/my_package/src/best_model.model
+ros/src/my_package/src/img_pose.txt
+ros/src/my_package/src/pointcloud.txt
+
 myenv/
 .DS_Store
 __pycache__
