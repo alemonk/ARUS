@@ -1,3 +1,10 @@
+'''
+This script generates a 3D point cloud from segmented images and their corresponding 6D poses.
+It reads the poses and images, applies the Canny edge detector to each image, and for each detected edge,
+it calculates the 3D world coordinates using the pose and transformation matrices.
+The 3D coordinates are then written to an output file.
+'''
+
 import numpy as np
 import cv2 as cv
 import os

@@ -1,3 +1,14 @@
+'''
+This script applies a pre-trained U-Net model for image segmentation on a series of images.
+It calculates the mean and standard deviation of the dataset for normalization,
+defines transformations, and creates a custom dataset for handling the image and mask data.
+The script then applies the model to the test data, generating predicted masks and saving the results for further analysis.
+It assumes a pre-trained U-Net model is available and the paths to the images, masks, and model are set appropriately.
+The output is a set of segmented images.
+This script is useful for tasks requiring image segmentation, such as medical imaging or object detection.
+Modifications may be needed based on your specific setup and use case.
+'''
+
 import os
 import matplotlib.pyplot as plt
 from PIL import Image

@@ -27,7 +27,7 @@ def extract_frames(video_paths, output_folder, frame_interval=1):
                 break
             
             if frame_count % frame_interval == 0:
-                frame_filename = os.path.join(output_folder, f"{extracted_count:04d}.jpg")
+                frame_filename = os.path.join(output_folder, f"{extracted_count}.jpg")
                 cv2.imwrite(frame_filename, frame)
                 extracted_count += 1
                 print(f'extracted frame: {extracted_count}')
@@ -40,7 +40,7 @@ def extract_frames(video_paths, output_folder, frame_interval=1):
     print(f"Extracted {extracted_count} frames in total and saved to {output_folder}")
 
 # Example usage
-video_paths = ['dataset_videos/video-trimmed.mp4']
+video_paths = ['dataset_videos/video-trimmed.mov']
 output_folder = 'ds/test_forearm'
 frame_interval = 1
 
