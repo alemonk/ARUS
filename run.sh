@@ -1,14 +1,23 @@
+#!/bin/bash
 
-# DOWNLOAD DATASET FROM SEGMENTS.AI AND ORGANIZE IT INTO TRAIN, VALIDATION AND TEST
-"/Users/alemonk/Library/Mobile Documents/com~apple~CloudDocs/MSc THESIS/segmentation/myenv/bin/python" "/Users/alemonk/Library/Mobile Documents/com~apple~CloudDocs/MSc THESIS/segmentation/ds/download_dataset.py"
-"/Users/alemonk/Library/Mobile Documents/com~apple~CloudDocs/MSc THESIS/segmentation/myenv/bin/python" "/Users/alemonk/Library/Mobile Documents/com~apple~CloudDocs/MSc THESIS/segmentation/ds/organize_dataset.py"
+# Define the python interpreter
+PYTHON_INTERPRETER="./myenv/bin/python"
 
-# EXTRACT FRAMES FROM FOREARM TEST DATASET
-"/Users/alemonk/Library/Mobile Documents/com~apple~CloudDocs/MSc THESIS/segmentation/myenv/bin/python" "/Users/alemonk/Library/Mobile Documents/com~apple~CloudDocs/MSc THESIS/segmentation/ds/extract_frames.py"
+# Uncomment the following lines if you need to train the model first
+
+# # DOWNLOAD DATASET FROM SEGMENTS.AI AND ORGANIZE IT INTO TRAIN, VALIDATION AND TEST
+# $PYTHON_INTERPRETER "./ds/download_dataset.py"
+# $PYTHON_INTERPRETER "./ds/organize_dataset.py"
+
+# # EXTRACT FRAMES FROM FOREARM TEST DATASET
+# $PYTHON_INTERPRETER "./ds/extract_frames.py"
+
+# # TRAIN MODEL
+# $PYTHON_INTERPRETER "./segm/train_model.py"
 
 # RUN MODEL
-"/Users/alemonk/Library/Mobile Documents/com~apple~CloudDocs/MSc THESIS/segmentation/myenv/bin/python" "/Users/alemonk/Library/Mobile Documents/com~apple~CloudDocs/MSc THESIS/segmentation/segm/run_model.py"
+$PYTHON_INTERPRETER "./segm/run_model.py"
 
 # 3D RECONSTRUCTION
-"/Users/alemonk/Library/Mobile Documents/com~apple~CloudDocs/MSc THESIS/segmentation/myenv/bin/python" "/Users/alemonk/Library/Mobile Documents/com~apple~CloudDocs/MSc THESIS/segmentation/recon/us_reconstruction.py"
-"/Users/alemonk/Library/Mobile Documents/com~apple~CloudDocs/MSc THESIS/segmentation/myenv/bin/python" "/Users/alemonk/Library/Mobile Documents/com~apple~CloudDocs/MSc THESIS/segmentation/recon/plot_pointcloud.py"
+$PYTHON_INTERPRETER "./recon/us_reconstruction.py"
+$PYTHON_INTERPRETER "./recon/plot_pointcloud.py"

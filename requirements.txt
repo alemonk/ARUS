@@ -1,0 +1,10 @@
+opencv-python
+matplotlib
+keras
+tensorflow
+torch
+torchvision
+scikit-learn
+segmentation_models_pytorch
+segments-ai
+vtk
