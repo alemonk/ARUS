@@ -10,10 +10,14 @@ from torchvision import transforms
 import re
 import time
 from unet import UNet
+from cv_bridge import CvBridge
+from sensor_msgs.msg import Image as ROSImage
+from my_package.msg import ImagePose
+from geometry_msgs.msg import Pose
 
 # Parameters
 img_height = 128
-batch_size = 16
+batch_size = 1
 poll_interval = 5  # Check every 5 seconds for new images
 
 class ImageMaskDataset(Dataset):
@@ -57,6 +61,7 @@ def resize_keep_aspect(image, desired_height):
     new_height = (new_height // 16) * 16
     return image.resize((new_width, new_height), Image.LANCZOS)
 
+'''
 def calculate_mean_std(loader):
     mean = 0.0
     std = 0.0
@@ -67,8 +72,9 @@ def calculate_mean_std(loader):
     mean /= len(loader.dataset)
     std /= len(loader.dataset)
     return mean.item(), std.item()
-
-def test_model(model_class, model_path, image_path, output_dir):
+'''
+ 
+def test_model(model_class, model_path, image, output_dir, result_index):
     # Instantiate model, loss function, and optimizer
     n_class = 1  # Assuming binary segmentation
     depth = 4
@@ -82,14 +88,14 @@ def test_model(model_class, model_path, image_path, output_dir):
     os.makedirs(f'{output_dir}/output_segmentation', exist_ok=True)
     os.makedirs(f'{output_dir}/comparison', exist_ok=True)
 
-    base_transform = transforms.ToTensor()
+    mean = 0.17347709834575653
+    std = 0.2102048248052597
     final_transform = transforms.Compose([
         transforms.ToTensor(),
         transforms.Normalize(mean, std)
     ])
 
     # Load and preprocess image
-    image = Image.open(image_path).convert("L")
     image = resize_keep_aspect(image, img_height)
     image_tensor = final_transform(image).unsqueeze(0)
 
@@ -98,47 +104,75 @@ def test_model(model_class, model_path, image_path, output_dir):
         output = torch.sigmoid(output)
         output = (output > 0.5).float().squeeze().cpu().numpy()
 
-        fig, ax = plt.subplots(1, 2, figsize=(12, 6))
-        ax[0].imshow(image, cmap='gray')
-        ax[0].set_title('Input Image')
-        ax[0].axis('off')
-
-        ax[1].imshow(output, cmap='gray')
-        ax[1].set_title('Predicted Mask')
-        ax[1].axis('off')
-
-        result_index = os.path.basename(image_path).split('.')[0]
-        plt.savefig(os.path.join(f'{output_dir}/comparison', f'test_result_{result_index}.png'))
-        plt.close(fig)
+        # fig, ax = plt.subplots(1, 2, figsize=(12, 6))
+        # ax[0].imshow(image, cmap='gray')
+        # ax[0].set_title('Input Image')
+        # ax[0].axis('off')
+        # ax[1].imshow(output, cmap='gray')
+        # ax[1].set_title('Predicted Mask')
+        # ax[1].axis('off')
+        # plt.savefig(os.path.join(f'{output_dir}/comparison', f'test_result_{result_index}.png'))
+        # plt.close(fig)
 
         plt.imsave(os.path.join(f'{output_dir}/output_segmentation', f'{result_index}.png'), output, cmap='gray')
         rospy.loginfo(f'Segmentation complete on frame {result_index}')
 
+    # Return the processed image for publishing
+    return output
+
+class ImageSegmentationNode:
+    def __init__(self):
+        rospy.init_node('image_segmentation_node')
+        default_path = '/home/alekappe/catkin_ws/src/my_package/src/'
+        self.model_path = rospy.get_param('~model_path', f'{default_path}best_model.model')
+        self.output_dir = rospy.get_param('~output_dir', f'{default_path}test_forearm_results')
+        self.image_topic = rospy.get_param('~image_topic', 'image_topic')
+        self.processed_image_topic = rospy.get_param('~processed_image_topic', 'processed_image_topic')
+
+        # base_transform = transforms.ToTensor()
+        # image_dir = rospy.get_param('~image_dir', f'{default_path}test_forearm')
+        # mask_dir = image_dir
+        # temp_dataset = ImageMaskDataset(image_dir, mask_dir, transform=base_transform)
+        # temp_loader = DataLoader(temp_dataset, batch_size=1, shuffle=False, num_workers=0)
+        # global mean, std
+        # mean, std = calculate_mean_std(temp_loader)
+        # rospy.loginfo(f"Calculated mean: {mean}, std: {std}")
+
+        self.bridge = CvBridge()
+        self.subscriber = rospy.Subscriber(self.image_topic, ImagePose, self.callback)
+        self.publisher = rospy.Publisher(self.processed_image_topic, ImagePose, queue_size=10)
+
+    def callback(self, image_pose_msg):
+        image = image_pose_msg.image
+        pose = image_pose_msg.pose
+        title = image_pose_msg.title
+
+        print(f'Received image {title}')
+
+        try:
+            cv_image = self.bridge.imgmsg_to_cv2(image, "mono8")
+            pil_image = Image.fromarray(cv_image)
+            timestamp = int(time.time())
+            processed_image = test_model(UNet, self.model_path, pil_image, self.output_dir, timestamp)
+
+            # Convert processed image back to ROS image message
+            processed_ros_image = self.bridge.cv2_to_imgmsg(processed_image.astype('uint8'), encoding="mono8")
+
+            # Publish the processed image along with the pose and title
+            processed_image_pose_msg = ImagePose()
+            processed_image_pose_msg.image = processed_ros_image
+            processed_image_pose_msg.pose = pose
+            processed_image_pose_msg.title = title
+            self.publisher.publish(processed_image_pose_msg)
+
+            rospy.loginfo(f"Published processed image {title}")
+
+        except Exception as e:
+            rospy.logerr(f"Error processing image: {e}")
+
 def main():
-    rospy.init_node('image_segmentation_node')
-    default_path = '/home/alekappe/catkin_ws/src/my_package/src/'
-    image_dir = rospy.get_param('~image_dir', f'{default_path}test_forearm')
-    mask_dir = image_dir
-    model_path = rospy.get_param('~model_path', f'{default_path}best_model.model')
-    output_dir = rospy.get_param('~output_dir', f'{default_path}test_forearm_results')
-
-    base_transform = transforms.ToTensor()
-    temp_dataset = ImageMaskDataset(image_dir, mask_dir, transform=base_transform)
-    temp_loader = DataLoader(temp_dataset, batch_size=1, shuffle=False, num_workers=0)
-    global mean, std
-    mean, std = calculate_mean_std(temp_loader)
-    rospy.loginfo(f"Calculated mean: {mean}, std: {std}")
-
-    while not rospy.is_shutdown():
-        image_files = sorted([f for f in os.listdir(image_dir) if os.path.isfile(os.path.join(image_dir, f))], key=numerical_sort)
-        for image_file in image_files:
-            image_path = os.path.join(image_dir, image_file)
-            test_model(UNet, model_path, image_path, output_dir)
-            os.remove(image_path)
-        rospy.sleep(poll_interval)
+    node = ImageSegmentationNode()
+    rospy.spin()
 
 if __name__ == '__main__':
-    try:
-        main()
-    except rospy.ROSInterruptException:
-        pass
+    main()

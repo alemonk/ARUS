@@ -24,7 +24,7 @@ def update_bounding_box_text(bbox):
     max_bound = bbox.get_max_bound()
     dimensions = max_bound - min_bound
     dimension_text = f"Dimensions: {dimensions[0]:.2f} x {dimensions[1]:.2f} x {dimensions[2]:.2f} cm"
-    print(dimension_text)  # Print dimensions to console
+    print(dimension_text)
     return dimension_text
 
 # Initial load
@@ -41,8 +41,8 @@ vis.add_geometry(pcd)
 coordinate_frame = o3d.geometry.TriangleMesh.create_coordinate_frame(size=1.0, origin=[0, 0, 0])
 vis.add_geometry(coordinate_frame)
 
-# Define the update function
 def update(vis):
+    print('-------------------------')
     print('Updating')
     new_pcd = load_point_cloud(pointcloud_filename)
     pcd.points = new_pcd.points
@@ -61,7 +61,7 @@ def update(vis):
 
     vis.poll_events()
     vis.update_renderer()
-    return False  # Continue updating
+    return False
 
 # Add update callback
 vis.register_key_callback(ord(" "), lambda vis: update(vis))  # Press space to update
