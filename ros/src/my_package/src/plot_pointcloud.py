@@ -11,7 +11,17 @@ def load_point_cloud(pointcloud_filename):
             points = np.loadtxt(pointcloud_filename, delimiter=',', unpack=False)
             pcd = o3d.geometry.PointCloud()
             pcd.points = o3d.utility.Vector3dVector(points[:, :3])
-            if points.shape[1] == 3:
+            if points.shape[1] >= 3:
+                # colors = np.tile([0, 0, 1], (points.shape[0], 1))
+                # pcd.colors = o3d.utility.Vector3dVector(colors)
+                return pcd
+            if points.shape[1] >= 3:
+                # Split points into two groups and assign different colors
+                colors = np.zeros((points.shape[0], 3))
+                midpoint = points.shape[0] // 2
+                colors[:midpoint] = [1, 0, 0]  # First half: Red
+                colors[midpoint:] = [0, 0, 1]  # Second half: Blue
+                pcd.colors = o3d.utility.Vector3dVector(colors)
                 return pcd
             else:
                 print(f"Unexpected number of columns in the point cloud file: {points.shape[1]}")
@@ -42,12 +52,13 @@ coordinate_frame = o3d.geometry.TriangleMesh.create_coordinate_frame(size=1.0, o
 vis.add_geometry(coordinate_frame)
 
 def update(vis):
-    print('-------------------------')
-    print('Updating')
     new_pcd = load_point_cloud(pointcloud_filename)
     pcd.points = new_pcd.points
     vis.update_geometry(pcd)
     
+    print('-------------------------')
+    print(f'Updating {pcd}')
+
     # Update bounding box
     bbox = pcd.get_axis_aligned_bounding_box()
     bbox.color = (1, 0, 0)
@@ -65,14 +76,7 @@ def update(vis):
 
 # Add update callback
 vis.register_key_callback(ord(" "), lambda vis: update(vis))  # Press space to update
-
-# Initial bounding box
-bbox = pcd.get_axis_aligned_bounding_box()
-bbox.color = (1, 0, 0)
-vis.add_geometry(bbox)
-
-# Print initial bounding box dimensions
-update_bounding_box_text(bbox)
+update(vis)
 
 # Run the visualizer
 vis.run()

@@ -8,6 +8,9 @@ import os
 import re
 import cv2
 from my_package.msg import ImagePose
+import random
+
+randomize_images = True
 
 def get_pose(i):
     distance_cm = 0.045
@@ -16,15 +19,15 @@ def get_pose(i):
     initial_x = 0
     initial_y = 0
     initial_z = 0
+    qw = 0.7071
     qx = 0
-    qy = 0
+    qy = 0.7071
     qz = 0
-    qw = 1
 
     # Calculate the new x-coordinate for the image
-    x = initial_x
+    x = initial_x + i * distance_cm
     y = initial_y
-    z = initial_z + i * distance_cm
+    z = initial_z
 
     # Return the pose as a Pose object
     pose = Pose()
@@ -38,11 +41,11 @@ def get_pose(i):
 
     return pose
 
-def publish_images(image_dir, pub):
+def collect_images(image_dir):
     bridge = CvBridge()
     image_files = sorted([f for f in os.listdir(image_dir) if os.path.isfile(os.path.join(image_dir, f))], key=numerical_sort)
     
-    rate = rospy.Rate(1)  # 1 Hz
+    images_with_poses = []
 
     for i, image_file in enumerate(image_files):
         image_path = os.path.join(image_dir, image_file)
@@ -58,11 +61,21 @@ def publish_images(image_dir, pub):
             image_pose_msg.title = title
             image_pose_msg.pose = pose
 
-            pub.publish(image_pose_msg)
-            rospy.loginfo(f"Published {image_file} with pose {pose}")
+            images_with_poses.append(image_pose_msg)
         else:
             rospy.logwarn(f"Failed to read {image_path}")
-        
+
+    return images_with_poses
+
+def publish_images_randomized(images_with_poses, pub):
+    rate = rospy.Rate(10)  # 10 Hz
+
+    if randomize_images:
+        random.shuffle(images_with_poses)
+
+    for image_pose_msg in images_with_poses:
+        pub.publish(image_pose_msg)
+        rospy.loginfo(f"Published {image_pose_msg.title}")
         rate.sleep()
 
 def numerical_sort(value):
@@ -77,11 +90,13 @@ def main():
     image_dir = rospy.get_param('~image_dir', f'{default_path}test_forearm')
     image_topic = rospy.get_param('~image_topic', 'image_topic')
     
-    pub = rospy.Publisher(image_topic, ImagePose, queue_size=10)
+    pub = rospy.Publisher(image_topic, ImagePose, queue_size=100)
     rospy.loginfo(f"Starting to publish images from {image_dir} to {image_topic}")
-    
+
     try:
-        publish_images(image_dir, pub)
+        images_with_poses = collect_images(image_dir)
+        publish_images_randomized(images_with_poses, pub)
+        rospy.spin()  # Keeps the node running until shutdown
     except rospy.ROSInterruptException:
         pass
 

@@ -9,6 +9,8 @@ from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
 import re
 import time
+import threading
+import queue
 from unet import UNet
 from cv_bridge import CvBridge
 from sensor_msgs.msg import Image as ROSImage
@@ -17,8 +19,9 @@ from geometry_msgs.msg import Pose
 
 # Parameters
 img_height = 128
-batch_size = 1
-poll_interval = 5  # Check every 5 seconds for new images
+batch_size = 16
+mean = 0.17347709834575653
+std = 0.2102048248052597
 
 class ImageMaskDataset(Dataset):
     def __init__(self, image_dir, mask_dir, transform=None):
@@ -61,20 +64,7 @@ def resize_keep_aspect(image, desired_height):
     new_height = (new_height // 16) * 16
     return image.resize((new_width, new_height), Image.LANCZOS)
 
-'''
-def calculate_mean_std(loader):
-    mean = 0.0
-    std = 0.0
-    for images, _ in loader:
-        images = images.view(images.size(0), images.size(1), -1)
-        mean += images.mean(2).sum(0)
-        std += images.std(2).sum(0)
-    mean /= len(loader.dataset)
-    std /= len(loader.dataset)
-    return mean.item(), std.item()
-'''
- 
-def test_model(model_class, model_path, image, output_dir, result_index):
+def test_model(model_class, model_path, image, output_dir, title):
     # Instantiate model, loss function, and optimizer
     n_class = 1  # Assuming binary segmentation
     depth = 4
@@ -83,13 +73,7 @@ def test_model(model_class, model_path, image, output_dir, result_index):
     model = model_class(n_class, depth, start_filters)
     model.load_state_dict(torch.load(model_path))
     model.eval()
-    
-    os.makedirs(output_dir, exist_ok=True)
-    os.makedirs(f'{output_dir}/output_segmentation', exist_ok=True)
-    os.makedirs(f'{output_dir}/comparison', exist_ok=True)
 
-    mean = 0.17347709834575653
-    std = 0.2102048248052597
     final_transform = transforms.Compose([
         transforms.ToTensor(),
         transforms.Normalize(mean, std)
@@ -111,11 +95,12 @@ def test_model(model_class, model_path, image, output_dir, result_index):
         # ax[1].imshow(output, cmap='gray')
         # ax[1].set_title('Predicted Mask')
         # ax[1].axis('off')
+        # os.makedirs(f'{output_dir}/comparison', exist_ok=True)
         # plt.savefig(os.path.join(f'{output_dir}/comparison', f'test_result_{result_index}.png'))
         # plt.close(fig)
-
-        plt.imsave(os.path.join(f'{output_dir}/output_segmentation', f'{result_index}.png'), output, cmap='gray')
-        rospy.loginfo(f'Segmentation complete on frame {result_index}')
+        # os.makedirs(f'{output_dir}/output_segmentation', exist_ok=True)
+        # plt.imsave(os.path.join(f'{output_dir}/output_segmentation', f'{title}'), output, cmap='gray')
+        # rospy.loginfo(f'Segmentation complete on frame {title}')
 
     # Return the processed image for publishing
     return output
@@ -129,46 +114,49 @@ class ImageSegmentationNode:
         self.image_topic = rospy.get_param('~image_topic', 'image_topic')
         self.processed_image_topic = rospy.get_param('~processed_image_topic', 'processed_image_topic')
 
-        # base_transform = transforms.ToTensor()
-        # image_dir = rospy.get_param('~image_dir', f'{default_path}test_forearm')
-        # mask_dir = image_dir
-        # temp_dataset = ImageMaskDataset(image_dir, mask_dir, transform=base_transform)
-        # temp_loader = DataLoader(temp_dataset, batch_size=1, shuffle=False, num_workers=0)
-        # global mean, std
-        # mean, std = calculate_mean_std(temp_loader)
-        # rospy.loginfo(f"Calculated mean: {mean}, std: {std}")
-
         self.bridge = CvBridge()
+        self.image_queue = queue.Queue()
         self.subscriber = rospy.Subscriber(self.image_topic, ImagePose, self.callback)
-        self.publisher = rospy.Publisher(self.processed_image_topic, ImagePose, queue_size=10)
+        self.publisher = rospy.Publisher(self.processed_image_topic, ImagePose, queue_size=100)
+        
+        self.processing_thread = threading.Thread(target=self.process_images)
+        self.processing_thread.daemon = True
+        self.processing_thread.start()
 
     def callback(self, image_pose_msg):
-        image = image_pose_msg.image
-        pose = image_pose_msg.pose
-        title = image_pose_msg.title
+        self.image_queue.put(image_pose_msg)
 
-        print(f'Received image {title}')
+    def process_images(self):
+        while not rospy.is_shutdown():
+            if not self.image_queue.empty():
+                image_pose_msg = self.image_queue.get()
+                image = image_pose_msg.image
+                pose = image_pose_msg.pose
+                title = image_pose_msg.title
 
-        try:
-            cv_image = self.bridge.imgmsg_to_cv2(image, "mono8")
-            pil_image = Image.fromarray(cv_image)
-            timestamp = int(time.time())
-            processed_image = test_model(UNet, self.model_path, pil_image, self.output_dir, timestamp)
+                print(f'Received image {title}')
 
-            # Convert processed image back to ROS image message
-            processed_ros_image = self.bridge.cv2_to_imgmsg(processed_image.astype('uint8'), encoding="mono8")
+                try:
+                    cv_image = self.bridge.imgmsg_to_cv2(image, "mono8")
+                    pil_image = Image.fromarray(cv_image)
+                    processed_image = test_model(UNet, self.model_path, pil_image, self.output_dir, title)
 
-            # Publish the processed image along with the pose and title
-            processed_image_pose_msg = ImagePose()
-            processed_image_pose_msg.image = processed_ros_image
-            processed_image_pose_msg.pose = pose
-            processed_image_pose_msg.title = title
-            self.publisher.publish(processed_image_pose_msg)
+                    # Convert processed image back to ROS image message
+                    processed_ros_image = self.bridge.cv2_to_imgmsg(processed_image.astype('uint8'), encoding="mono8")
 
-            rospy.loginfo(f"Published processed image {title}")
+                    # Publish the processed image along with the pose and title
+                    processed_image_pose_msg = ImagePose()
+                    processed_image_pose_msg.image = processed_ros_image
+                    processed_image_pose_msg.pose = pose
+                    processed_image_pose_msg.title = title
+                    self.publisher.publish(processed_image_pose_msg)
 
-        except Exception as e:
-            rospy.logerr(f"Error processing image: {e}")
+                    rospy.loginfo(f"Published processed image {title}")
+
+                except Exception as e:
+                    rospy.logerr(f"Error processing image: {e}")
+            else:
+                time.sleep(0.1)
 
 def main():
     node = ImageSegmentationNode()
