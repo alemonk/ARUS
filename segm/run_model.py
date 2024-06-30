@@ -22,7 +22,7 @@ from helper_functions import *
 # Parameters
 img_height = 128
 batch_size = 16
-n_class = 1
+n_class = 2
 threshold = 0.3
 
 # Calculate mean and std

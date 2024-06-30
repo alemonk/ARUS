@@ -21,10 +21,8 @@ original_width = 1000
 # Unet parameters
 num_epochs = 30
 batch_size = 16
-learning_rate = 0.0001
-n_class = 1
-depth = 4
-start_filters = 64
+learning_rate = 0.001
+n_class = 2
 threshold = 0.3
 
 # # Calculate mean and std
@@ -66,6 +64,7 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, num_epoch
             images, masks = images.float(), masks.float()
             optimizer.zero_grad()
             outputs = model(images)
+            outputs = torch.sigmoid(outputs)
             loss = criterion(outputs, masks)
             loss.backward()
             clip_gradients(model)
@@ -82,6 +81,7 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, num_epoch
             for images, masks in val_loader:
                 images, masks = images.float(), masks.float()
                 outputs = model(images)
+                outputs = torch.sigmoid(outputs)
                 loss = criterion(outputs, masks)
                 val_loss += loss.item() * images.size(0)
         val_loss = val_loss / len(val_loader.dataset)
@@ -110,9 +110,9 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, num_epoch
 
     return model
 
-def test_model(model_class, model_path, test_loader, n_class, depth, start_filters, output_dir='segm/test_results'):
+def test_model(model_class, model_path, test_loader, n_class, output_dir='segm/test_results'):
     # Load the saved best model
-    model = model_class(n_class, depth, start_filters)
+    model = model_class(n_class)
     model.load_state_dict(torch.load(model_path))
     model.eval()
 
@@ -170,21 +170,25 @@ def test_model(model_class, model_path, test_loader, n_class, depth, start_filte
 plt.switch_backend('Agg')
 
 # Create datasets and dataloaders
-# train_dataset = ImageMaskDataset('ds/train/images', ['ds/train/masks_bone', 'ds/train/masks_muscle_layer'], transform)
-# val_dataset = ImageMaskDataset('ds/validation/images', ['ds/validation/masks_bone', 'ds/validation/masks_muscle_layer'], transform)
-# test_dataset = ImageMaskDataset('ds/test/images', ['ds/test/masks_bone', 'ds/test/masks_muscle_layer'], transform)
-train_dataset = ImageMaskDataset('ds/train/images', ['ds/train/masks_bone'], transform)
-val_dataset = ImageMaskDataset('ds/validation/images', ['ds/validation/masks_bone'], transform)
-test_dataset = ImageMaskDataset('ds/test/images', ['ds/test/masks_bone'], transform)
+if n_class == 1:
+    train_dataset = ImageMaskDataset('ds/train/images', ['ds/train/masks_bone'], transform)
+    val_dataset = ImageMaskDataset('ds/validation/images', ['ds/validation/masks_bone'], transform)
+    test_dataset = ImageMaskDataset('ds/test/images', ['ds/test/masks_bone'], transform)
+    # criterion = DiceLoss()
+    criterion = nn.BCELoss()
+if n_class >= 2:
+    train_dataset = ImageMaskDataset('ds/train/images', ['ds/train/masks_bone', 'ds/train/masks_muscle_layer'], transform)
+    val_dataset = ImageMaskDataset('ds/validation/images', ['ds/validation/masks_bone', 'ds/validation/masks_muscle_layer'], transform)
+    test_dataset = ImageMaskDataset('ds/test/images', ['ds/test/masks_bone', 'ds/test/masks_muscle_layer'], transform)
+    # criterion = DiceLoss()
+    criterion = nn.CrossEntropyLoss()
 
 train_loader = DataLoader(train_dataset, batch_size, shuffle=True)
 val_loader = DataLoader(val_dataset, batch_size, shuffle=False)
 test_loader = DataLoader(test_dataset, batch_size, shuffle=False)
 
 # Initialize model
-model = UNet(n_class, depth, start_filters)
-# criterion = DiceLoss()
-criterion = nn.CrossEntropyLoss()
+model = UNet(n_class)
 optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 
 # Train and test model
@@ -193,4 +197,4 @@ if os.path.exists('segm/best_model.model'):
     os.remove('segm/best_model.model')
 
 model = train_model(model, train_loader, val_loader, criterion, optimizer, num_epochs)
-test_model(UNet, 'segm/best_model.model', test_loader, n_class, depth, start_filters)
+test_model(UNet, 'segm/best_model.model', test_loader, n_class)
