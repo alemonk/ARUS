@@ -3,16 +3,9 @@ import matplotlib.pyplot as plt
 from PIL import Image
 import torch
 import torch.nn as nn
-import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
-from torchvision import transforms
-from unet import UNet
-import time
-import copy
 import re
-import shutil
 import numpy as np
-from matplotlib.colors import ListedColormap
 from helper_functions import *
 
 class ImageMaskDataset(Dataset):
@@ -123,3 +116,12 @@ def calculate_metrics(outputs, masks):
         accuracy = (correct_pixels / total_pixels).item()
 
         return iou, accuracy
+
+def get_colors():
+    colors = [
+        [255, 255, 0],  # Yellow
+        [0, 0, 255],    # Blue
+        [0, 255, 0],    # Green
+        [255, 0, 0]     # Red
+    ]
+    return colors

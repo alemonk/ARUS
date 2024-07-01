@@ -16,7 +16,7 @@ import torch
 from torchvision import transforms
 from unet import UNet
 import numpy as np
-from helper_functions import resize_image, numerical_sort
+from helper_functions import resize_image, numerical_sort, get_colors
 
 # Parameters
 img_height = 128
@@ -50,7 +50,7 @@ def run_unet_model(model_path, image_dir, transform, n_class, output_dir='segm/t
     model.eval()
 
     # Define a list of colors for each class
-    colors = [[255, 255, 0], [0, 0, 255], [0, 255, 0], [255, 0, 0]]  # Add more colors if there are more classes
+    colors = get_colors()
 
     # List all image files in the directory
     image_files = sorted([f for f in os.listdir(image_dir) if os.path.isfile(os.path.join(image_dir, f))], key=numerical_sort)

@@ -14,6 +14,7 @@ dataset_videos/
 
 recon/img_pose.txt
 recon/pointcloud.txt
+recon/pointclouds/
 
 segm/test_forearm_results
 segm/test_results
