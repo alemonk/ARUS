@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 
 class UNet(nn.Module):
-    def __init__(self, n_class, depth, start_filters):
+    def __init__(self, n_class, depth=4, start_filters=64):
         super().__init__()
         self.depth = depth
         
