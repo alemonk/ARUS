@@ -44,10 +44,6 @@ shutil.rmtree('segm/test_results', ignore_errors=True)
 if os.path.exists('segm/best_model.model'):
     os.remove('segm/best_model.model')
 
-# Gradient clipping function using PyTorch's built-in method
-def clip_gradients(model, max_norm=1.0):
-    torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm)
-
 # Training function with performance plotting and saving the best model
 def train_model(model, train_loader, val_loader, criterion, optimizer, num_epochs, model_save_path='segm/best_model.model'):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -72,7 +68,7 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, num_epoch
             outputs = torch.sigmoid(outputs)
             loss = criterion(outputs, masks)
             loss.backward()
-            clip_gradients(model)
+            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
             optimizer.step()
             running_loss += loss.item() * images.size(0)
         
