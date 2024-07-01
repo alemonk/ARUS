@@ -9,19 +9,18 @@ from torchvision import transforms
 from unet import UNet
 import time
 import copy
-import re
+from tqdm import tqdm
 import shutil
 import numpy as np
-from helper_functions import *
+from helper_functions import plot_performance, get_colors, ImageMaskDataset, DiceLoss
 
 # Parameters
 original_height = 1600
 original_width = 1000
 
 # Unet parameters
-num_epochs = 30
+num_epochs = 20
 batch_size = 16
-learning_rate = 0.001
 n_class = 2
 threshold = 0.3
 
@@ -40,14 +39,19 @@ transform = transforms.Compose([
     transforms.Normalize(mean, std)
 ])
 
-# Gradient clipping function
+# Train and test model
+shutil.rmtree('segm/test_results', ignore_errors=True)
+if os.path.exists('segm/best_model.model'):
+    os.remove('segm/best_model.model')
+
+# Gradient clipping function using PyTorch's built-in method
 def clip_gradients(model, max_norm=1.0):
-    for p in model.parameters():
-        if p.grad is not None:
-            p.grad.data.clamp_(-max_norm, max_norm)
+    torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm)
 
 # Training function with performance plotting and saving the best model
-def train_model(model, train_loader, val_loader, criterion, optimizer, num_epochs):
+def train_model(model, train_loader, val_loader, criterion, optimizer, num_epochs, model_save_path='segm/best_model.model'):
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    model = model.to(device)
     best_loss = float('inf')
     best_model_wts = copy.deepcopy(model.state_dict())
     train_losses = []
@@ -58,10 +62,11 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, num_epoch
     for epoch in range(num_epochs):
         since = time.time()
 
+        # Training phase
         model.train()
         running_loss = 0.0
-        for i, (images, masks) in enumerate(train_loader):
-            images, masks = images.float(), masks.float()
+        for images, masks in tqdm(train_loader, desc=f"Epoch {epoch + 1}/{num_epochs}"):
+            images, masks = images.float().to(device), masks.float().to(device)
             optimizer.zero_grad()
             outputs = model(images)
             outputs = torch.sigmoid(outputs)
@@ -79,7 +84,7 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, num_epoch
         val_loss = 0.0
         with torch.no_grad():
             for images, masks in val_loader:
-                images, masks = images.float(), masks.float()
+                images, masks = images.float().to(device), masks.float().to(device)
                 outputs = model(images)
                 outputs = torch.sigmoid(outputs)
                 loss = criterion(outputs, masks)
@@ -87,17 +92,17 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, num_epoch
         val_loss = val_loss / len(val_loader.dataset)
         val_losses.append(val_loss)
 
-        print(f'Epoch {epoch + 1}/{num_epochs}, Loss: {epoch_loss:.4f}, Val Loss: {val_loss:.4f}')
+        print(f'Loss: {epoch_loss:.4f}, Val Loss: {val_loss:.4f}')
 
         # Save the best model
         if val_loss < best_loss:
             print("Saving best model")
             best_loss = val_loss
             best_model_wts = copy.deepcopy(model.state_dict())
-            torch.save(best_model_wts, 'segm/best_model.model')
+            torch.save(best_model_wts, model_save_path)
 
         time_elapsed = time.time() - since
-        print('{:.0f}m {:.0f}s'.format(time_elapsed // 60, time_elapsed % 60))
+        print('Elapsed time: {:.0f}m {:.0f}s'.format(time_elapsed // 60, time_elapsed % 60))
         print('___________________________________________\n')
 
     # Load the best model weights
@@ -116,12 +121,7 @@ def test_model(model_class, model_path, test_loader, n_class, output_dir='segm/t
     model.load_state_dict(torch.load(model_path))
     model.eval()
 
-    colors = [
-        [255, 255, 0],  # Yellow for class 0
-        [0, 0, 255],    # Blue for class 1
-        [0, 255, 0],    # Green for class 2
-        [255, 0, 0]     # Red for class 3
-    ]
+    colors = get_colors()[0:n_class]
 
     with torch.no_grad():
         for i, (images, masks) in enumerate(test_loader):
@@ -176,12 +176,14 @@ if n_class == 1:
     test_dataset = ImageMaskDataset('ds/test/images', ['ds/test/masks_bone'], transform)
     # criterion = DiceLoss()
     criterion = nn.BCELoss()
+    learning_rate = 0.0001
 if n_class >= 2:
     train_dataset = ImageMaskDataset('ds/train/images', ['ds/train/masks_bone', 'ds/train/masks_muscle_layer'], transform)
     val_dataset = ImageMaskDataset('ds/validation/images', ['ds/validation/masks_bone', 'ds/validation/masks_muscle_layer'], transform)
     test_dataset = ImageMaskDataset('ds/test/images', ['ds/test/masks_bone', 'ds/test/masks_muscle_layer'], transform)
-    # criterion = DiceLoss()
-    criterion = nn.CrossEntropyLoss()
+    criterion = DiceLoss()
+    # criterion = nn.CrossEntropyLoss()
+    learning_rate = 0.001
 
 train_loader = DataLoader(train_dataset, batch_size, shuffle=True)
 val_loader = DataLoader(val_dataset, batch_size, shuffle=False)
@@ -191,10 +193,6 @@ test_loader = DataLoader(test_dataset, batch_size, shuffle=False)
 model = UNet(n_class)
 optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 
-# Train and test model
-shutil.rmtree('segm/test_results', ignore_errors=True)
-if os.path.exists('segm/best_model.model'):
-    os.remove('segm/best_model.model')
-
-model = train_model(model, train_loader, val_loader, criterion, optimizer, num_epochs)
-test_model(UNet, 'segm/best_model.model', test_loader, n_class)
+model_save_path = 'segm/best_model.model'
+model = train_model(model, train_loader, val_loader, criterion, optimizer, num_epochs, model_save_path='segm/best_model.model')
+test_model(UNet, model_save_path, test_loader, n_class)
