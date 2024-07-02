@@ -20,7 +20,7 @@ from helper_functions import resize_image, numerical_sort, get_colors
 
 # Parameters
 img_height = 128
-n_class = 2
+n_class = 3
 threshold = 0.9
 
 # Calculate mean and std
@@ -70,18 +70,12 @@ def run_unet_model(model_path, image_dir, transform, n_class, output_dir='segm/t
             for k in range(output.shape[0]):  # Loop over each channel
                 color_mask[output[k] > threshold] = colors[k % len(colors)]  # Use color corresponding to the class
 
-            plt.imshow(color_mask)
-            plt.axis('off')
             os.makedirs(f'{output_dir}/output_segmentation', exist_ok=True)
-            plt.savefig(os.path.join(f'{output_dir}/output_segmentation', f'{i}.png'))
-            plt.close()
+            Image.fromarray(color_mask).save(os.path.join(f'{output_dir}/output_segmentation', f'{i}.png'))
 
             for k in range(output.shape[0]):  # Loop over each channel
-                plt.imshow(output[k], cmap='gray', vmin=0, vmax=1)
-                plt.axis('off')
-                os.makedirs(output_dir, exist_ok=True)
+                gray_mask = (output[k] * 255).astype(np.uint8)
                 os.makedirs(f'{output_dir}/class{k}', exist_ok=True)
-                plt.savefig(os.path.join(f'{output_dir}/class{k}', f'{i}.png'))
-                plt.close()
+                Image.fromarray(gray_mask).save(os.path.join(f'{output_dir}/class{k}', f'{i}.png'))
 
 run_unet_model('segm/best_model.model', image_dir, final_transform, n_class)

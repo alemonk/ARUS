@@ -14,14 +14,10 @@ import shutil
 import numpy as np
 from helper_functions import plot_performance, get_colors, ImageMaskDataset, DiceLoss
 
-# Parameters
-original_height = 1600
-original_width = 1000
-
 # Unet parameters
-num_epochs = 20
+num_epochs = 50
 batch_size = 16
-n_class = 2
+n_class = 3
 threshold = 0.3
 
 # # Calculate mean and std
@@ -170,13 +166,20 @@ if n_class == 1:
     train_dataset = ImageMaskDataset('ds/train/images', ['ds/train/masks_bone'], transform)
     val_dataset = ImageMaskDataset('ds/validation/images', ['ds/validation/masks_bone'], transform)
     test_dataset = ImageMaskDataset('ds/test/images', ['ds/test/masks_bone'], transform)
-    # criterion = DiceLoss()
-    criterion = nn.BCELoss()
+    criterion = DiceLoss()
+    #criterion = nn.BCELoss()
     learning_rate = 0.0001
-if n_class >= 2:
-    train_dataset = ImageMaskDataset('ds/train/images', ['ds/train/masks_bone', 'ds/train/masks_muscle_layer'], transform)
-    val_dataset = ImageMaskDataset('ds/validation/images', ['ds/validation/masks_bone', 'ds/validation/masks_muscle_layer'], transform)
-    test_dataset = ImageMaskDataset('ds/test/images', ['ds/test/masks_bone', 'ds/test/masks_muscle_layer'], transform)
+if n_class == 2:
+    train_dataset = ImageMaskDataset('ds/train/images', ['ds/train/masks_bone', 'ds/train/masks_muscle_layer1'], transform)
+    val_dataset = ImageMaskDataset('ds/validation/images', ['ds/validation/masks_bone', 'ds/validation/masks_muscle_layer1'], transform)
+    test_dataset = ImageMaskDataset('ds/test/images', ['ds/test/masks_bone', 'ds/test/masks_muscle_layer1'], transform)
+    criterion = DiceLoss()
+    # criterion = nn.CrossEntropyLoss()
+    learning_rate = 0.001
+if n_class == 3:
+    train_dataset = ImageMaskDataset('ds/train/images', ['ds/train/masks_bone', 'ds/train/masks_muscle_layer1', 'ds/train/masks_muscle_layer2'], transform)
+    val_dataset = ImageMaskDataset('ds/validation/images', ['ds/validation/masks_bone', 'ds/validation/masks_muscle_layer1', 'ds/validation/masks_muscle_layer2'], transform)
+    test_dataset = ImageMaskDataset('ds/test/images', ['ds/test/masks_bone', 'ds/test/masks_muscle_layer1', 'ds/test/masks_muscle_layer2'], transform)
     criterion = DiceLoss()
     # criterion = nn.CrossEntropyLoss()
     learning_rate = 0.001

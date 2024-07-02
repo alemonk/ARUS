@@ -4,6 +4,7 @@ import os
 import sys
 import shutil
 import time
+
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../segm')))
 from helper_functions import get_colors
 
@@ -12,10 +13,10 @@ img_folder_path = 'segm/test_forearm_results/output_segmentation'
 output_pointcloud_dir = 'recon/pointclouds'
 imgs_height_cm = 6.0
 
-n_class = 2
+store_full_image = False
+n_class = 3
 shutil.rmtree(output_pointcloud_dir, ignore_errors=True)
-time.sleep(3)
-
+time.sleep(1)
 # sensor_to_image_transf = np.array([
 #     [0.98501951, -0.09266497,  0.04806903, 205.29482151],
 #     [-0.1614265, -0.99285119, -0.07972393,  13.92010423],
@@ -43,7 +44,7 @@ def quaternion_to_rotation_matrix(quat, trans):
                            [0.0, 0.0, 0.0, 1.0]])
     return rot_matrix
 
-def process_image(image_file, pose_line, sensor_to_image_transf, colors):
+def process_image(image_file, pose_line, sensor_to_image_transf, colors, store_full_image=False):
     # Extract translation and quaternion from the pose line
     pose_data = pose_line.split(' ')
     trans_x = float(pose_data[0])
@@ -68,18 +69,23 @@ def process_image(image_file, pose_line, sensor_to_image_transf, colors):
 
     for class_idx, color in enumerate(colors):
         mask = cv.inRange(cv_img, np.array(color), np.array(color))
-        edges = cv.Canny(mask, 100, 200)
-        
         print(f"Processing {image_file} for class {class_idx}")
-        height, width = edges.shape
+        if not store_full_image:
+            edges = cv.Canny(mask, 100, 200)
+            height, width = edges.shape
+        else:
+            edges = mask
+            height, width = mask.shape
 
         output_file_path = os.path.join(output_pointcloud_dir, f'class_{class_idx}.txt')
         os.makedirs(output_pointcloud_dir, exist_ok=True)
         
+        borders = 0
+
         with open(output_file_path, 'a') as output_file:
-            for w in range(width):
-                for h in range(height):
-                    if edges[h][w] == 255:  # Edge detected
+            for w in range(borders, width - borders):
+                for h in range(borders, height - borders):
+                    if edges[h, w] == 255:  # Edge detected or mask value is white
                         sensor_x = scale_x * (h - offset_height)
                         sensor_y = scale_y * (w - offset_width)
                         
@@ -116,4 +122,4 @@ colors = get_colors()[0:n_class]
 
 for image_file, pose_line in zip(sorted_image_files, pose_lines):
     full_image_path = os.path.join(img_folder_path, image_file)
-    process_image(full_image_path, pose_line, sensor_to_image_transf, colors)
+    process_image(full_image_path, pose_line, sensor_to_image_transf, colors, store_full_image)

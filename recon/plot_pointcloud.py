@@ -1,13 +1,19 @@
 import numpy as np
 import vtk
 import random
+import os
+
+# Number of classes
+n_class = 3
 
 # Filenames for the point clouds of different classes
-pointcloud_filename_class0 = 'recon/pointclouds/class_0.txt'
-pointcloud_filename_class1 = 'recon/pointclouds/class_1.txt'
+pointcloud_filenames = [f'recon/pointclouds/class_{i}.txt' for i in range(n_class)]
+
+# Color map for different classes (you can customize this list with different colors)
+color_map = [(200, 200, 200), (255, 192, 203), (25, 192, 203)]
 
 class VtkPointCloud:
-    def __init__(self, zMin=0, zMax=0, maxNumPoints=1e6, pointSize=1):
+    def __init__(self, zMin=0, zMax=0, maxNumPoints=1e6, pointSize=2):
         self.maxNumPoints = maxNumPoints
         self.vtkPolyData = vtk.vtkPolyData()
         self.clearPoints()
@@ -53,30 +59,46 @@ class VtkPointCloud:
         self.vtkPolyData.GetPointData().SetScalars(self.vtkColors)
 
 # Load point clouds
-lines_class0 = np.loadtxt(pointcloud_filename_class0, delimiter=',', unpack=False)
-lines_class1 = np.loadtxt(pointcloud_filename_class1, delimiter=',', unpack=False)
+all_lines = []
+point_clouds = []
+
+for i in range(n_class):
+    if os.path.exists(pointcloud_filenames[i]):
+        lines = np.loadtxt(pointcloud_filenames[i], delimiter=',', unpack=False)
+        if lines.size > 0:
+            all_lines.append(lines)
+            point_clouds.append(lines)
+        else:
+            point_clouds.append(None)
+    else:
+        point_clouds.append(None)
 
 # Compute the bounding box of the point clouds
-all_lines = np.concatenate((lines_class0, lines_class1), axis=0)
-min_vals = np.min(all_lines, axis=0)
-max_vals = np.max(all_lines, axis=0)
-axis_length = max((max_vals[0] - min_vals[0]) * 1.5, (max_vals[1] - min_vals[1]) * 1.5, (max_vals[2] - min_vals[2]) * 1.5)
+if all_lines:
+    all_lines_combined = np.concatenate(all_lines, axis=0)
+    min_vals = np.min(all_lines_combined, axis=0)
+    max_vals = np.max(all_lines_combined, axis=0)
+    axis_length = max((max_vals[0] - min_vals[0]) * 1.5, (max_vals[1] - min_vals[1]) * 1.5, (max_vals[2] - min_vals[2]) * 1.5)
+else:
+    min_vals = np.array([0, 0, 0])
+    max_vals = np.array([1, 1, 1])
+    axis_length = 1.0
 
 # Create VTK point clouds with different colors
-vtkPointCloud_class0 = VtkPointCloud(zMin=min_vals[2], zMax=max_vals[2])
-vtkPointCloud_class1 = VtkPointCloud(zMin=min_vals[2], zMax=max_vals[2])
-
-# Add points to the point clouds
-for point in lines_class0:
-    vtkPointCloud_class0.addPoint(point, (200, 200, 200))
-
-for point in lines_class1:
-    vtkPointCloud_class1.addPoint(point, (255, 192, 203))
+vtkPointClouds = []
+for i in range(n_class):
+    if point_clouds[i] is not None:
+        vtkPointCloud = VtkPointCloud(zMin=min_vals[2], zMax=max_vals[2])
+        for point in point_clouds[i]:
+            vtkPointCloud.addPoint(point, color_map[i % len(color_map)])
+        vtkPointClouds.append(vtkPointCloud)
 
 # Renderer
 renderer = vtk.vtkRenderer()
-renderer.AddActor(vtkPointCloud_class0.vtkActor)
-renderer.AddActor(vtkPointCloud_class1.vtkActor)
+
+for vtkPointCloud in vtkPointClouds:
+    renderer.AddActor(vtkPointCloud.vtkActor)
+
 renderer.ResetCamera()
 
 # Axes

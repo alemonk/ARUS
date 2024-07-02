@@ -5,6 +5,7 @@ tensorflow
 torch
 torchvision
 scikit-learn
+scikit-image
 segmentation_models_pytorch
 segments-ai
 vtk

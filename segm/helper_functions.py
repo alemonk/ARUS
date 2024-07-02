@@ -57,9 +57,14 @@ class DiceLoss(nn.Module):
 
     def forward(self, logits, targets):
         logits = torch.sigmoid(logits)
-        intersection = (logits * targets).sum()
-        dice = (2. * intersection + self.smooth) / (logits.sum() + targets.sum() + self.smooth)
-        return 1 - dice
+        num_classes = logits.shape[1]
+        dice = 0
+
+        for i in range(num_classes):
+            intersection = (logits[:, i] * targets[:, i]).sum()
+            dice += (2. * intersection + self.smooth) / (logits[:, i].sum() + targets[:, i].sum() + self.smooth)
+        
+        return 1 - dice / num_classes
 
 # Calculate mean and std of dataset
 def calculate_mean_std(dataset):

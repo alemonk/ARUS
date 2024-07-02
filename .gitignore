@@ -11,6 +11,7 @@ ds/train
 ds/validation
 
 dataset_videos/
+output/
 
 recon/img_pose.txt
 recon/pointcloud.txt
