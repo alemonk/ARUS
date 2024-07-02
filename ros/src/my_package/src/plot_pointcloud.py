@@ -61,10 +61,11 @@ coordinate_frame = o3d.geometry.TriangleMesh.create_coordinate_frame(size=1.0, o
 vis.add_geometry(coordinate_frame)
 
 def add_geometries(vis, pointclouds):
-    for pcd, filename in pointclouds:
+    for i, (pcd, filename) in enumerate(pointclouds):
         vis.add_geometry(pcd)
         bbox = pcd.get_axis_aligned_bounding_box()
-        bbox_color = np.array(colors[pointclouds.index((pcd, filename)) % len(colors)]) / 255.0
+        class_idx = int(os.path.splitext(filename)[0])
+        bbox_color = np.array(colors[class_idx % len(colors)]) / 255.0
         bbox.color = bbox_color
         vis.add_geometry(bbox)
         update_bounding_box_text(bbox, os.path.splitext(filename)[0])
