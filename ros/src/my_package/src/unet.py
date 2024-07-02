@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 
 class UNet(nn.Module):
-    def __init__(self, n_class, depth=4, start_filters=64):
+    def __init__(self, n_class, depth=4, start_filters=64, dropout_prob=0.5):
         super().__init__()
         self.depth = depth
         
@@ -17,9 +17,12 @@ class UNet(nn.Module):
             self.encoders.append(
                 nn.Sequential(
                     nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1),
+                    nn.BatchNorm2d(out_channels),
                     nn.ReLU(inplace=True),
                     nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1),
-                    nn.ReLU(inplace=True)
+                    nn.BatchNorm2d(out_channels),
+                    nn.ReLU(inplace=True),
+                    nn.Dropout(dropout_prob)
                 )
             )
             self.pooling.append(nn.MaxPool2d(kernel_size=2, stride=2))
@@ -29,9 +32,12 @@ class UNet(nn.Module):
         # Bottleneck layer
         self.bottleneck = nn.Sequential(
             nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1),
+            nn.BatchNorm2d(out_channels),
             nn.ReLU(inplace=True),
             nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1),
-            nn.ReLU(inplace=True)
+            nn.BatchNorm2d(out_channels),
+            nn.ReLU(inplace=True),
+            nn.Dropout(dropout_prob)
         )
 
         # Define layers for decoding
@@ -45,9 +51,12 @@ class UNet(nn.Module):
             self.decoders.append(
                 nn.Sequential(
                     nn.Conv2d(out_channels, out_channels // 2, kernel_size=3, padding=1),
+                    nn.BatchNorm2d(out_channels // 2),
                     nn.ReLU(inplace=True),
                     nn.Conv2d(out_channels // 2, out_channels // 2, kernel_size=3, padding=1),
-                    nn.ReLU(inplace=True)
+                    nn.BatchNorm2d(out_channels // 2),
+                    nn.ReLU(inplace=True),
+                    nn.Dropout(dropout_prob)
                 )
             )
             out_channels //= 2

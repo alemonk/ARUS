@@ -12,14 +12,8 @@ from unet import UNet
 from cv_bridge import CvBridge
 from my_package.msg import ImagePose
 import numpy as np
-from helper_functions import resize_image, get_colors
-
-# Parameters
-img_height = 128
-n_class = 2
-threshold = 0.9
-mean = 0.17347709834575653
-std = 0.2102048248052597
+from helper_functions import resize_image
+from params import *
 
 def run_model(model_class, model_path, image):
     # Instantiate model, loss function, and optimizer

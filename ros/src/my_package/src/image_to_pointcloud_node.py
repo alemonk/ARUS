@@ -7,24 +7,20 @@ import rospy
 from cv_bridge import CvBridge
 from my_package.msg import ImagePose
 import matplotlib.pyplot as plt
-
-def get_colors(n):
-    colors = [
-        [255, 255, 0],  # Yellow
-        [0, 0, 255],    # Blue
-        [0, 255, 0],    # Green
-        [255, 0, 0]     # Red
-    ]
-    return colors[0:n]
+from params import *
+import shutil
+import time
 
 # Parameters
-n_class = 2
 colors = get_colors(n_class)
 default_path = '/home/alekappe/catkin_ws/src/my_package/src/'
 output_pointcloud_dir = f'{default_path}pointclouds'
 imgs_height_cm = 6.0
 identity_matrix = np.eye(4)
 sensor_to_image_transf = identity_matrix
+
+shutil.rmtree(output_pointcloud_dir)
+time.sleep(1)
 
 def quaternion_to_rotation_matrix(quat, trans):
     q = quat.copy()

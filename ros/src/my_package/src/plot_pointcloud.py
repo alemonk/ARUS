@@ -1,11 +1,10 @@
 import numpy as np
 import open3d as o3d
 import os
-from helper_functions import get_colors
+from params import *
 
 default_path = '/home/alekappe/catkin_ws/src/my_package/src/'
 pointcloud_dir = f'{default_path}pointclouds'
-n_class = 2  # Set the number of classes or point cloud files you expect
 colors = get_colors(n_class)
 
 def load_point_clouds(pointcloud_dir):
@@ -33,11 +32,11 @@ def load_point_clouds(pointcloud_dir):
                 print(f"Error loading point cloud {pointcloud_filename}: {e}")
     return pointclouds
 
-def update_bounding_box_text(bbox):
+def update_bounding_box_text(bbox, class_name):
     min_bound = bbox.get_min_bound()
     max_bound = bbox.get_max_bound()
     dimensions = max_bound - min_bound
-    dimension_text = f"Dimensions: {dimensions[0]:.2f} x {dimensions[1]:.2f} x {dimensions[2]:.2f} cm"
+    dimension_text = f"Class {class_name} Dimensions: {dimensions[0]:.2f} x {dimensions[1]:.2f} x {dimensions[2]:.2f} cm"
     print(dimension_text)
     return dimension_text
 
@@ -67,11 +66,15 @@ def update(vis):
     print('Updating point clouds')
 
     # Update bounding box
+    i = 0
     for pcd in pointclouds:
         bbox = pcd.get_axis_aligned_bounding_box()
-        bbox.color = (1, 0, 0)
+        bbox_color = np.array(colors[i % len(colors)]) / 255.0  # Normalize the color values
+        bbox.color = bbox_color
+        
         vis.add_geometry(bbox)
-        update_bounding_box_text(bbox)
+        update_bounding_box_text(bbox, str(i))
+        i = i+1
 
     vis.poll_events()
     vis.update_renderer()
