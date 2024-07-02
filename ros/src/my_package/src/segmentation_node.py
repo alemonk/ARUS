@@ -72,8 +72,6 @@ class ImageSegmentationNode:
                 pose = image_pose_msg.pose
                 title = image_pose_msg.title
 
-                print(f'Received image {title}')
-
                 try:
                     cv_image = self.bridge.imgmsg_to_cv2(image, "mono8")
                     pil_image = PILImage.fromarray(cv_image)
@@ -89,7 +87,7 @@ class ImageSegmentationNode:
                     processed_image_pose_msg.title = title
                     self.publisher.publish(processed_image_pose_msg)
 
-                    rospy.loginfo(f"Published processed image {title}")
+                    rospy.loginfo(f"Segmentation completed on image {title}")
 
                 except Exception as e:
                     rospy.logerr(f"Error processing image: {e}")

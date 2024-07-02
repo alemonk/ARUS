@@ -10,7 +10,7 @@ import cv2
 from my_package.msg import ImagePose
 import random
 
-randomize_images = True
+randomize_images = False
 
 def get_pose(i):
     distance_cm = 0.045
@@ -68,7 +68,7 @@ def collect_images(image_dir):
     return images_with_poses
 
 def publish_images_randomized(images_with_poses, pub):
-    rate = rospy.Rate(10)  # 10 Hz
+    rate = rospy.Rate(2) # Hz
 
     if randomize_images:
         random.shuffle(images_with_poses)
