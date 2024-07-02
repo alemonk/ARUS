@@ -1,11 +1,24 @@
 import numpy as np
 import open3d as o3d
 import os
+import time
 from params import *
 
 default_path = '/home/alekappe/catkin_ws/src/my_package/src/'
 pointcloud_dir = f'{default_path}pointclouds'
 colors = get_colors(n_class)
+
+# Dictionary to track visibility of each class
+class_visibility = {i: True for i in range(n_class)}
+last_pressed = time.time()
+
+def debounce(interval=1):
+    global last_pressed
+    current_time = time.time()
+    if current_time - last_pressed > interval:
+        last_pressed = current_time
+        return True
+    return False
 
 def load_point_clouds(pointcloud_dir):
     pointclouds = []
@@ -14,18 +27,15 @@ def load_point_clouds(pointcloud_dir):
             pointcloud_filename = os.path.join(pointcloud_dir, filename)
             try:
                 points = np.loadtxt(pointcloud_filename, delimiter=',', unpack=False)
-                if points.ndim == 1 and points.size == 0:
-                    print(f"File {pointcloud_filename} is empty.")
-                    continue
-                elif points.ndim == 1:
+                if points.ndim == 1:
                     points = np.expand_dims(points, axis=0)
                 
-                pcd = o3d.geometry.PointCloud()
                 if points.shape[1] >= 3:
+                    pcd = o3d.geometry.PointCloud()
                     pcd.points = o3d.utility.Vector3dVector(points[:, :3])
                     color = np.array(colors[idx % len(colors)]) / 255.0
                     pcd.colors = o3d.utility.Vector3dVector(np.tile(color, (points.shape[0], 1)))
-                    pointclouds.append(pcd)
+                    pointclouds.append((pcd, filename))
                 else:
                     print(f"Unexpected number of columns in the point cloud file: {points.shape[1]}")
             except Exception as e:
@@ -38,7 +48,6 @@ def update_bounding_box_text(bbox, class_name):
     dimensions = max_bound - min_bound
     dimension_text = f"Class {class_name} Dimensions: {dimensions[0]:.2f} x {dimensions[1]:.2f} x {dimensions[2]:.2f} cm"
     print(dimension_text)
-    return dimension_text
 
 # Initial load
 pointclouds = load_point_clouds(pointcloud_dir)
@@ -47,45 +56,54 @@ pointclouds = load_point_clouds(pointcloud_dir)
 vis = o3d.visualization.VisualizerWithKeyCallback()
 vis.create_window()
 
-# Add the point clouds
-for pcd in pointclouds:
-    vis.add_geometry(pcd)
-
-# Add coordinate axes
+# Add the point clouds and coordinate axes
 coordinate_frame = o3d.geometry.TriangleMesh.create_coordinate_frame(size=1.0, origin=[0, 0, 0])
 vis.add_geometry(coordinate_frame)
 
-def update(vis):
-    pointclouds = load_point_clouds(pointcloud_dir)
-    vis.clear_geometries()
-    for pcd in pointclouds:
+def add_geometries(vis, pointclouds):
+    for pcd, filename in pointclouds:
         vis.add_geometry(pcd)
-    vis.add_geometry(coordinate_frame)
-    
-    print('-------------------------')
-    print('Updating point clouds')
-
-    # Update bounding box
-    i = 0
-    for pcd in pointclouds:
         bbox = pcd.get_axis_aligned_bounding_box()
-        bbox_color = np.array(colors[i % len(colors)]) / 255.0  # Normalize the color values
+        bbox_color = np.array(colors[pointclouds.index((pcd, filename)) % len(colors)]) / 255.0
         bbox.color = bbox_color
-        
         vis.add_geometry(bbox)
-        update_bounding_box_text(bbox, str(i))
-        i = i+1
+        update_bounding_box_text(bbox, os.path.splitext(filename)[0])
 
+def refresh_visualization(vis):
+    view_control = vis.get_view_control()
+    camera_params = view_control.convert_to_pinhole_camera_parameters()
+    
+    vis.clear_geometries()
+    vis.add_geometry(coordinate_frame)
+    filtered_pointclouds = [(pcd, filename) for i, (pcd, filename) in enumerate(pointclouds) if class_visibility[i]]
+    add_geometries(vis, filtered_pointclouds)
+    
+    view_control.convert_from_pinhole_camera_parameters(camera_params)
     vis.poll_events()
     vis.update_renderer()
-    return False
 
-# Add update callback
-vis.register_key_callback(ord(" "), lambda vis: update(vis))  # Press space to update
-update(vis)
+def update(vis):
+    if not debounce():
+        return
+    print("-------------------------\nUpdating point cloud")
+    global pointclouds
+    pointclouds = load_point_clouds(pointcloud_dir)
+    refresh_visualization(vis)
+
+def toggle_visibility(vis, n):
+    if not debounce():
+        return
+    print("-------------------------\nToggling class visibility")
+    class_visibility[n] = not class_visibility[n]
+    refresh_visualization(vis)
+
+# Register key callbacks
+vis.register_key_callback(ord(" "), lambda vis: update(vis))
+for i in range(n_class):
+    vis.register_key_callback(ord(str(i)), lambda vis, idx=i: toggle_visibility(vis, idx))
 
 # Run the visualizer
+time.sleep(1)
+update(vis)
 vis.run()
-
-# Close the visualizer
 vis.destroy_window()

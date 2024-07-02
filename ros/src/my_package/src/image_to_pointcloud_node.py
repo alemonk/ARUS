@@ -15,9 +15,6 @@ import time
 colors = get_colors(n_class)
 default_path = '/home/alekappe/catkin_ws/src/my_package/src/'
 output_pointcloud_dir = f'{default_path}pointclouds'
-imgs_height_cm = 6.0
-identity_matrix = np.eye(4)
-sensor_to_image_transf = identity_matrix
 
 shutil.rmtree(output_pointcloud_dir)
 time.sleep(1)
@@ -37,7 +34,7 @@ def quaternion_to_rotation_matrix(quat, trans):
     ])
     return rot_matrix
 
-def process_image(image, pose, sensor_to_image_transf, image_height_pixels, colors):
+def process_image(image, pose, sensor_to_image_transf, image_height_pixels, colors, store_full_image=False):
     trans_x = pose.position.x
     trans_y = pose.position.y
     trans_z = pose.position.z
@@ -60,12 +57,14 @@ def process_image(image, pose, sensor_to_image_transf, image_height_pixels, colo
     
     for class_idx, color in enumerate(colors):
         mask = cv.inRange(cv_img, np.array(color), np.array(color))
-        edges = cv.Canny(mask, 100, 200)
-        
-        print(f"Processing image for class {class_idx}")
-        height, width = edges.shape
+        if not store_full_image:
+            edges = cv.Canny(mask, 100, 200)
+            height, width = edges.shape
+        else:
+            edges = mask
+            height, width = mask.shape
 
-        output_file_path = os.path.join(output_pointcloud_dir, f'class_{class_idx}.txt')
+        output_file_path = os.path.join(output_pointcloud_dir, f'{class_idx}.txt')
         os.makedirs(output_pointcloud_dir, exist_ok=True)
         
         with open(output_file_path, 'a') as output_file:
@@ -85,7 +84,7 @@ def process_image(image, pose, sensor_to_image_transf, image_height_pixels, colo
                         world_coords = np.dot(homogeneous_matrix, transformed_sensor_coords)
                         
                         # Write the 3D world coordinates to the output file
-                        point_str = f"{world_coords[0]},{world_coords[1]},{world_coords[2]}"
+                        point_str = f'{world_coords[0]},{world_coords[1]},{world_coords[2]}'
                         output_file.write(point_str + '\n')
 
 class PointCloudGeneratorNode:
@@ -103,7 +102,7 @@ class PointCloudGeneratorNode:
 
     def callback(self, image_pose_msg):
         try:
-            cv_img = self.bridge.imgmsg_to_cv2(image_pose_msg.image, "bgr8")
+            cv_img = self.bridge.imgmsg_to_cv2(image_pose_msg.image, 'bgr8')
             pose = image_pose_msg.pose
             title = image_pose_msg.title
 
@@ -111,11 +110,11 @@ class PointCloudGeneratorNode:
             image_height_pixels = cv_img.shape[0]
 
             # Process the image to generate the point cloud
-            process_image(cv_img, pose, sensor_to_image_transf, image_height_pixels, colors)
-            rospy.loginfo(f"Processed image {title}")
+            process_image(cv_img, pose, sensor_to_image_transf, image_height_pixels, colors, store_full_image)
+            rospy.loginfo(f'Pointcloud conversion completed on image {title}')
 
         except Exception as e:
-            rospy.logerr(f"Error processing image: {e}")
+            rospy.logerr(f'Error processing image: {e}')
 
 def main():
     try:

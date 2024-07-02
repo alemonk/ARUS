@@ -1,0 +1,10 @@
+<launch>
+    <!-- Launch the image_to_pointcloud_node -->
+    <node name="image_to_pointcloud" pkg="my_package" type="image_to_pointcloud_node.py" output="screen" />
+
+    <!-- Launch the segmentation_node -->
+    <node name="segmentation" pkg="my_package" type="segmentation_node.py" output="screen" />
+
+    <!-- Launch the fake_image_publisher -->
+    <node name="fake_image_publisher" pkg="my_package" type="fake_image_publisher.py" output="screen" />
+</launch>
