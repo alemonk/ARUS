@@ -17,6 +17,8 @@ from torchvision import transforms
 from unet import UNet
 import numpy as np
 import sys
+import shutil
+import time
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from helper_functions import resize_image, numerical_sort
 from params import *
@@ -39,14 +41,14 @@ def load_and_transform_image(image_path, transform, img_height):
         image = transform(image)
     return image
 
-def run_unet_model(model_path, image_dir, transform, n_class, output_dir='segm/test_forearm_results'):
+def run_unet_model(model_path, image_dir, transform, n_class, output_dir):
     # Load the saved best model
     model = UNet(n_class)
     model.load_state_dict(torch.load(model_path))
     model.eval()
 
     # Define a list of colors for each class
-    colors = get_colors()
+    colors = get_colors(n_class)
 
     # List all image files in the directory
     image_files = sorted([f for f in os.listdir(image_dir) if os.path.isfile(os.path.join(image_dir, f))], key=numerical_sort)
@@ -74,4 +76,7 @@ def run_unet_model(model_path, image_dir, transform, n_class, output_dir='segm/t
                 os.makedirs(f'{output_dir}/class{k}', exist_ok=True)
                 Image.fromarray(gray_mask).save(os.path.join(f'{output_dir}/class{k}', f'{i}.png'))
 
-run_unet_model('segm/best_model.model', image_dir, final_transform, n_class)
+output_dir = 'segm/test_forearm_results'
+shutil.rmtree(output_dir, ignore_errors=True)
+time.sleep(1)
+run_unet_model('segm/best_model.model', image_dir, final_transform, n_class, output_dir)

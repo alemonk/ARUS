@@ -108,7 +108,7 @@ def test_model(model_class, model_path, test_loader, n_class, output_dir='segm/t
     model.load_state_dict(torch.load(model_path))
     model.eval()
 
-    colors = get_colors()[0:n_class]
+    colors = get_colors(n_class)
 
     with torch.no_grad():
         for i, (images, masks) in enumerate(test_loader):
@@ -175,8 +175,8 @@ if n_class == 3:
     train_dataset = ImageMaskDataset('ds/train/images', ['ds/train/masks_bone', 'ds/train/masks_muscle_layer1', 'ds/train/masks_muscle_layer2'], transform)
     val_dataset = ImageMaskDataset('ds/validation/images', ['ds/validation/masks_bone', 'ds/validation/masks_muscle_layer1', 'ds/validation/masks_muscle_layer2'], transform)
     test_dataset = ImageMaskDataset('ds/test/images', ['ds/test/masks_bone', 'ds/test/masks_muscle_layer1', 'ds/test/masks_muscle_layer2'], transform)
-    criterion = DiceLoss()
-    # criterion = nn.CrossEntropyLoss()
+    # criterion = DiceLoss()
+    criterion = nn.CrossEntropyLoss()
     learning_rate = 0.001
 
 train_loader = DataLoader(train_dataset, batch_size, shuffle=True)

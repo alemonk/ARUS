@@ -8,10 +8,10 @@ import random
 from PIL import Image
 
 user = 'ale'
-dt_name = 'forearm-ventral-final'
-version = 'v0.3'
+dt_name = 'forearm-ventral-final-clone'
+version = 'v0.2'
 label_set = 'ground-truth'
-filter = ['reviewed']
+filter = ['labeled', 'reviewed']
 
 dt_name_full = f'{user}/{dt_name}'
 
@@ -55,8 +55,11 @@ if os.path.exists(f'export_coco-panoptic_{user}_{dt_name}_{version}.json'):
     os.remove(f'export_coco-panoptic_{user}_{dt_name}_{version}.json')
 
 print("Processing complete. Images and masks moved to their respective folders.")
+shutil.rmtree('ds/train', ignore_errors=True)
+shutil.rmtree('ds/validation', ignore_errors=True)
+shutil.rmtree('ds/test', ignore_errors=True)
 
-time.sleep(3)
+time.sleep(2)
 
 # Constants
 TRAIN_RATIO = 0.7
@@ -139,20 +142,20 @@ def process_and_copy_files(file_list, split):
         new_bone_mask_name = f'{i}.png'
 
         if os.path.exists(image_src_path) and os.path.exists(mask_src_path):
-            shutil.copy(image_src_path, os.path.join(f'ds/{split}/images', new_image_name))
+            shutil.copy(image_src_path, os.path.join(f'{split}/images', new_image_name))
             create_masks_for_colors(
                 mask_src_path,
-                os.path.join(f'ds/{split}/masks_muscle_layer1', new_muscle_layer1_mask_name),
-                os.path.join(f'ds/{split}/masks_muscle_layer2', new_muscle_layer2_mask_name),
-                os.path.join(f'ds/{split}/masks_bone', new_bone_mask_name)
+                os.path.join(f'{split}/masks_muscle_layer1', new_muscle_layer1_mask_name),
+                os.path.join(f'{split}/masks_muscle_layer2', new_muscle_layer2_mask_name),
+                os.path.join(f'{split}/masks_bone', new_bone_mask_name)
             )
 
-        print(f'{split} ds organization: {round(100 * (i + 1) / len(file_list))} %')
+        print(f'{split} organization: {round(100 * (i + 1) / len(file_list))} %')
 
 # Process and copy the files to the respective directories
-process_and_copy_files(train_files, 'train')
-process_and_copy_files(val_files, 'validation')
-process_and_copy_files(test_files, 'test')
+process_and_copy_files(train_files, 'ds/train')
+process_and_copy_files(val_files, 'ds/validation')
+process_and_copy_files(test_files, 'ds/test')
 
 print("Dataset split into train, validation, and test sets with renamed files and separate masks for muscle layers and bone.")
 shutil.rmtree('output', ignore_errors=True)

@@ -11,7 +11,7 @@ poses_filename = 'recon/img_pose.txt'
 img_folder_path = 'segm/test_forearm_results/output_segmentation'
 output_pointcloud_dir = 'recon/pointclouds'
 
-store_full_image = True
+store_full_image = False
 shutil.rmtree(output_pointcloud_dir, ignore_errors=True)
 time.sleep(1)
 # sensor_to_image_transf = np.array([
@@ -66,7 +66,9 @@ def process_image(image_file, pose_line, sensor_to_image_transf, colors, store_f
 
     for class_idx, color in enumerate(colors):
         mask = cv.inRange(cv_img, np.array(color), np.array(color))
-        print(f"Processing {image_file} for class {class_idx}")
+        
+        if class_idx == 0:
+            print(f"Processing {image_file}")
         if not store_full_image:
             edges = cv.Canny(mask, 100, 200)
             height, width = edges.shape
@@ -74,7 +76,7 @@ def process_image(image_file, pose_line, sensor_to_image_transf, colors, store_f
             edges = mask
             height, width = mask.shape
 
-        output_file_path = os.path.join(output_pointcloud_dir, f'class_{class_idx}.txt')
+        output_file_path = os.path.join(output_pointcloud_dir, f'{class_idx}.txt')
         os.makedirs(output_pointcloud_dir, exist_ok=True)
         
         borders = 0
@@ -115,7 +117,7 @@ first_image_path = os.path.join(img_folder_path, sorted_image_files[0])
 first_image = cv.imread(first_image_path)
 image_height_pixels = first_image.shape[0]
 
-colors = get_colors()[0:n_class]
+colors = get_colors(n_class)
 
 for image_file, pose_line in zip(sorted_image_files, pose_lines):
     full_image_path = os.path.join(img_folder_path, image_file)

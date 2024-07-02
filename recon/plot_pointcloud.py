@@ -7,10 +7,10 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from params import *
 
 # Filenames for the point clouds of different classes
-pointcloud_filenames = [f'recon/pointclouds/class_{i}.txt' for i in range(n_class)]
+pointcloud_filenames = [f'recon/pointclouds/{i}.txt' for i in range(n_class)]
 
 # Color map for different classes (you can customize this list with different colors)
-color_map = [(200, 200, 200), (255, 192, 203), (25, 192, 203)]
+color_map = get_colors(n_class)
 
 class VtkPointCloud:
     def __init__(self, zMin=0, zMax=0, maxNumPoints=1e6, pointSize=2):
