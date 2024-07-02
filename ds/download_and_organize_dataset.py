@@ -155,4 +155,4 @@ process_and_copy_files(val_files, 'validation')
 process_and_copy_files(test_files, 'test')
 
 print("Dataset split into train, validation, and test sets with renamed files and separate masks for muscle layers and bone.")
-# shutil.rmtree('output', ignore_errors=True)
+shutil.rmtree('output', ignore_errors=True)

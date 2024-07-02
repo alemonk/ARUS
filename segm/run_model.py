@@ -16,19 +16,15 @@ import torch
 from torchvision import transforms
 from unet import UNet
 import numpy as np
-from helper_functions import resize_image, numerical_sort, get_colors
-
-# Parameters
-img_height = 128
-n_class = 3
-threshold = 0.9
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from helper_functions import resize_image, numerical_sort
+from params import *
 
 # Calculate mean and std
 image_dir = 'ds/test_forearm'
 
 # Define transformations
-mean = 0.17347709834575653
-std = 0.2102048248052597
 final_transform = transforms.Compose([
     transforms.ToTensor(),
     transforms.Normalize(mean, std)

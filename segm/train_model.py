@@ -12,13 +12,10 @@ import copy
 from tqdm import tqdm
 import shutil
 import numpy as np
-from helper_functions import plot_performance, get_colors, ImageMaskDataset, DiceLoss
-
-# Unet parameters
-num_epochs = 50
-batch_size = 16
-n_class = 3
-threshold = 0.3
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from helper_functions import plot_performance, ImageMaskDataset, DiceLoss
+from params import *
 
 # # Calculate mean and std
 # image_dir = 'ds/train/images'
@@ -28,8 +25,6 @@ threshold = 0.3
 # print(f"Calculated mean: {mean}, std: {std}")
 
 # Define transformations
-mean = 0.17347709834575653
-std = 0.2102048248052597
 transform = transforms.Compose([
     transforms.ToTensor(),
     transforms.Normalize(mean, std)

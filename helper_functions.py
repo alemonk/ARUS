@@ -120,12 +120,3 @@ def calculate_metrics(outputs, masks):
         accuracy = (correct_pixels / total_pixels).item()
 
         return iou, accuracy
-
-def get_colors():
-    colors = [
-        [255, 255, 0],  # Yellow
-        [0, 0, 255],    # Blue
-        [0, 255, 0],    # Green
-        [255, 0, 0]     # Red
-    ]
-    return colors

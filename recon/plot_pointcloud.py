@@ -2,9 +2,9 @@ import numpy as np
 import vtk
 import random
 import os
-
-# Number of classes
-n_class = 3
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from params import *
 
 # Filenames for the point clouds of different classes
 pointcloud_filenames = [f'recon/pointclouds/class_{i}.txt' for i in range(n_class)]
