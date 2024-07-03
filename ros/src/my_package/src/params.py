@@ -1,19 +1,20 @@
 import numpy as np
 
 # UNet parameters
-num_epochs = 50
-batch_size = 16
 n_class = 3
-threshold = 0.75
+depth = 3
+start_filters = 64
+dropout_prob = 0.3
 
-# model
+# Model hyperparameters
+threshold = 0.75
 img_height = 128
 mean = 0.17347709834575653
 std = 0.2102048248052597
 
 # us_reconstruction
 imgs_height_cm = 6.0
-store_full_image = False
+only_borders_to_pointcloud = False
 identity_matrix = np.eye(4)
 sensor_to_image_transf = identity_matrix
 # sensor_to_image_transf = np.array([
