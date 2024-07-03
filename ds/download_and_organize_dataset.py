@@ -9,7 +9,7 @@ from PIL import Image
 
 user = 'ale'
 dt_name = 'forearm-ventral-final-clone'
-version = 'v0.2'
+version = 'v0.3'
 label_set = 'ground-truth'
 filter = ['labeled', 'reviewed']
 

@@ -14,7 +14,7 @@ import shutil
 import numpy as np
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from helper_functions import plot_performance, ImageMaskDataset, DiceLoss
+from helper_functions import plot_performance, ImageMaskDataset, DiceLoss, CombinedLoss
 from params import *
 
 # # Calculate mean and std
@@ -175,9 +175,10 @@ if n_class == 3:
     train_dataset = ImageMaskDataset('ds/train/images', ['ds/train/masks_bone', 'ds/train/masks_muscle_layer1', 'ds/train/masks_muscle_layer2'], transform)
     val_dataset = ImageMaskDataset('ds/validation/images', ['ds/validation/masks_bone', 'ds/validation/masks_muscle_layer1', 'ds/validation/masks_muscle_layer2'], transform)
     test_dataset = ImageMaskDataset('ds/test/images', ['ds/test/masks_bone', 'ds/test/masks_muscle_layer1', 'ds/test/masks_muscle_layer2'], transform)
-    # criterion = DiceLoss()
-    criterion = nn.CrossEntropyLoss()
-    learning_rate = 0.001
+    criterion = DiceLoss()
+    # criterion = nn.CrossEntropyLoss()
+    # criterion = CombinedLoss()
+    learning_rate = 0.0001
 
 train_loader = DataLoader(train_dataset, batch_size, shuffle=True)
 val_loader = DataLoader(val_dataset, batch_size, shuffle=False)

@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 from PIL import Image
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader
 import re
 import numpy as np
@@ -56,15 +57,30 @@ class DiceLoss(nn.Module):
         self.smooth = smooth
 
     def forward(self, logits, targets):
-        logits = torch.sigmoid(logits)
-        num_classes = logits.shape[1]
-        dice = 0
+        logits = F.softmax(logits, dim=1)
+        logits = logits.contiguous().view(logits.size(0), logits.size(1), -1)
+        targets = targets.contiguous().view(targets.size(0), targets.size(1), -1)
+        intersection = (logits * targets).sum(dim=2)
+        union = logits.sum(dim=2) + targets.sum(dim=2)
+        dice = (2. * intersection + self.smooth) / (union + self.smooth)
+        dice = dice.mean(dim=1)
 
-        for i in range(num_classes):
-            intersection = (logits[:, i] * targets[:, i]).sum()
-            dice += (2. * intersection + self.smooth) / (logits[:, i].sum() + targets[:, i].sum() + self.smooth)
+        return 1 - dice.mean()
+
+class CombinedLoss(nn.Module):
+    def __init__(self, smooth=1e-6, weight=0.5):
+        super(CombinedLoss, self).__init__()
+        self.dice_loss = DiceLoss(smooth)
+        self.cross_entropy_loss = nn.CrossEntropyLoss()
+        self.weight = weight
+
+    def forward(self, logits, targets):
+        dice_loss_value = self.dice_loss(logits, targets)
+        targets = targets.argmax(dim=1)
+        cross_entropy_loss_value = self.cross_entropy_loss(logits, targets)
         
-        return 1 - dice / num_classes
+        combined_loss = self.weight * dice_loss_value + (1 - self.weight) * cross_entropy_loss_value
+        return combined_loss
 
 # Calculate mean and std of dataset
 def calculate_mean_std(dataset):
