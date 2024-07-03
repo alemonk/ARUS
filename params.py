@@ -1,14 +1,19 @@
 
 # UNet parameters
-num_epochs = 50
-batch_size = 16
 n_class = 3
-threshold = 0.75
+depth = 3
+start_filters = 64
+dropout_prob = 0.3
 
-# model
+# Model hyperparameters
+learning_rate = 0.0001
+num_epochs = 20
+batch_size = 16
+threshold = 0.75
 img_height = 128
 mean = 0.17347709834575653
 std = 0.2102048248052597
+model_save_path = 'segm/best_model.model'
 
 # us_reconstruction
 imgs_height_cm = 6.0

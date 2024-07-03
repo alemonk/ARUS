@@ -7,6 +7,7 @@ import torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader
 import re
 import numpy as np
+from params import *
 
 class ImageMaskDataset(Dataset):
     def __init__(self, image_dir, mask_dirs, transform=None):
@@ -15,7 +16,7 @@ class ImageMaskDataset(Dataset):
         self.transform = transform
         self.image_files = sorted([f for f in os.listdir(image_dir) if os.path.isfile(os.path.join(image_dir, f))], key=numerical_sort)
         self.n_classes = len(mask_dirs)
-        self.img_height = 128
+        self.img_height = img_height
 
     def __len__(self):
         return len(self.image_files)
@@ -34,11 +35,11 @@ class ImageMaskDataset(Dataset):
             masks.append(np.array(mask_img) / 255.0)
         
         # Stack masks along the third dimension
-        mask = np.stack(masks, axis=-1)
+        mask = np.stack(masks, axis=0)
         
         if self.transform:
             image = self.transform(image)
-            mask = torch.from_numpy(mask).permute(2, 0, 1)  # Convert to tensor and change dimensions to (C, H, W)
+            mask = torch.from_numpy(mask)
             
         return image, mask
 

@@ -43,7 +43,7 @@ def load_and_transform_image(image_path, transform, img_height):
 
 def run_unet_model(model_path, image_dir, transform, n_class, output_dir):
     # Load the saved best model
-    model = UNet(n_class)
+    model = UNet(n_class, depth, start_filters, dropout_prob)
     model.load_state_dict(torch.load(model_path))
     model.eval()
 
