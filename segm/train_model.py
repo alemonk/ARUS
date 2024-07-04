@@ -28,8 +28,7 @@ transform = transforms.Compose([
     transforms.Normalize(mean, std)
 ])
 
-# Train and test model
-shutil.rmtree(model_directory, ignore_errors=True)
+shutil.rmtree(output_model_train, ignore_errors=True)
 if os.path.exists(model_directory):
     os.remove(model_directory)
 
@@ -96,7 +95,7 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, num_epoch
     training_time = time.time() - start_time
     
     # Plot and save the training and validation loss
-    plot_performance(train_losses, val_losses, training_time)
+    plot_performance(train_losses, val_losses, training_time, output_model_train)
 
     return model
 
@@ -182,4 +181,4 @@ test_loader = DataLoader(test_dataset, batch_size, shuffle=False)
 model = UNet(n_class, depth, start_filters, dropout_prob)
 optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 model = train_model(model, train_loader, val_loader, criterion, optimizer, num_epochs, model_directory)
-test_model(model, model_directory, test_loader, n_class, output_model_test)
+test_model(model, model_directory, test_loader, n_class, output_model_train)

@@ -89,7 +89,7 @@ def numerical_sort(value):
     return parts
 
 # Function to plot performance metrics and save the plot as an image file
-def plot_performance(train_losses, val_losses, training_time, output_dir='segm/test_results', filename='performance_plot.png'):
+def plot_performance(train_losses, val_losses, training_time, output_dir, filename='performance_plot.png'):
     os.makedirs(output_dir, exist_ok=True)  # Create the output directory if it doesn't exist
 
     plt.figure(figsize=(10, 5))

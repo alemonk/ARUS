@@ -24,7 +24,7 @@ std = 0.2102048248052597
 # Directories
 input_segmentation = f'ds/test-{dt_name}'
 output_segmentation = f'segm/results-test-{dt_name}'
-output_model_test = f'segm/results-training-{dt_name}'
+output_model_train = f'segm/results-training-{dt_name}'
 model_directory = f'segm/model-{n_class}class-{dt_name}.model'
 
 # us_reconstruction
