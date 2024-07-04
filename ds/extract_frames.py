@@ -1,5 +1,8 @@
 import cv2
 import os
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from params import dt_name
 
 def extract_frames(video_paths, output_folder, frame_interval=1):
     """
@@ -39,12 +42,8 @@ def extract_frames(video_paths, output_folder, frame_interval=1):
     
     print(f"Extracted {extracted_count} frames in total and saved to {output_folder}")
 
-# video_paths = ['dataset_videos/dataset-forearm-ventral.mov']
-# output_folder = 'ds/dataset-forearm-ventral'
-# frame_interval = 20
-
-video_paths = ['dataset_videos/video-trimmed.mov']
-output_folder = 'ds/test-forearm-ventral'
+video_paths = [f'dataset_videos/test-{dt_name}.mov']
+output_folder = f'ds/test-{dt_name}'
 frame_interval = 1
 
 extract_frames(video_paths, output_folder, frame_interval)

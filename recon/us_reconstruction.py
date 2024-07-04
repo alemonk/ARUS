@@ -7,10 +7,6 @@ import time
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from params import *
 
-poses_filename = 'recon/img_pose.txt'
-img_folder_path = 'segm/test_forearm_results/output_segmentation'
-output_pointcloud_dir = 'recon/pointclouds'
-
 store_full_image = False
 shutil.rmtree(output_pointcloud_dir, ignore_errors=True)
 time.sleep(1)

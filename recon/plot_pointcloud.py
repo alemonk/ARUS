@@ -6,9 +6,6 @@ import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from params import *
 
-# Filenames for the point clouds of different classes
-pointcloud_filenames = [f'recon/pointclouds/{i}.txt' for i in range(n_class)]
-
 # Color map for different classes (you can customize this list with different colors)
 color_map = get_colors(n_class)
 

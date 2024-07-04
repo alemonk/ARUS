@@ -1,12 +1,19 @@
 
+# Dataset parameters
+user = 'alemonk'
+dt_name = 'phantom3'
+version = 'v0.2'
+label_set = 'ground-truth'
+filter = ['labeled', 'reviewed']
+
 # UNet parameters
-n_class = 3
+n_class = 1
 depth = 3
 start_filters = 64
 dropout_prob = 0.3
 
 # Model hyperparameters
-learning_rate = 0.0001
+learning_rate = 0.0005
 num_epochs = 20
 batch_size = 16
 threshold = 0.75
@@ -15,12 +22,19 @@ mean = 0.17347709834575653
 std = 0.2102048248052597
 
 # Directories
-output_model_test = 'segm/test_results'
-output_segmentation = 'segm/test_forearm_results'
-model_save_path = 'segm/best_model.model'
+input_segmentation = f'ds/test-{dt_name}'
+output_segmentation = f'segm/results-test-{dt_name}'
+output_model_test = f'segm/results-training-{dt_name}'
+model_directory = f'segm/model-{n_class}class-{dt_name}.model'
 
 # us_reconstruction
+poses_filename = f'recon/img_pose.txt'
+img_folder_path = f'{output_segmentation}/output_segmentation'
+output_pointcloud_dir = f'recon/pointclouds/{dt_name}'
 imgs_height_cm = 6.0
+
+# plot_pointcloud
+pointcloud_filenames = [f'{output_pointcloud_dir}/{i}.txt' for i in range(n_class)]
 
 def get_colors(n):
     colors = [

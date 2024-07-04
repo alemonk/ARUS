@@ -68,21 +68,6 @@ class DiceLoss(nn.Module):
 
         return 1 - dice.mean()
 
-class CombinedLoss(nn.Module):
-    def __init__(self, smooth=1e-6, weight=0.5):
-        super(CombinedLoss, self).__init__()
-        self.dice_loss = DiceLoss(smooth)
-        self.cross_entropy_loss = nn.CrossEntropyLoss()
-        self.weight = weight
-
-    def forward(self, logits, targets):
-        dice_loss_value = self.dice_loss(logits, targets)
-        targets = targets.argmax(dim=1)
-        cross_entropy_loss_value = self.cross_entropy_loss(logits, targets)
-        
-        combined_loss = self.weight * dice_loss_value + (1 - self.weight) * cross_entropy_loss_value
-        return combined_loss
-
 # Calculate mean and std of dataset
 def calculate_mean_std(dataset):
     loader = DataLoader(dataset, batch_size=1, shuffle=False, num_workers=0)

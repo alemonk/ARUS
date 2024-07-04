@@ -14,15 +14,13 @@ import shutil
 import numpy as np
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from helper_functions import plot_performance, ImageMaskDataset, DiceLoss, CombinedLoss
+from helper_functions import plot_performance, ImageMaskDataset, calculate_mean_std
 from params import *
 
-# # Calculate mean and std
-# image_dir = 'ds/train/images'
-# mask_dir = 'ds/train/masks_bone'
-# dataset = ImageMaskDataset(image_dir, mask_dir, transform=transforms.ToTensor())
-# mean, std = calculate_mean_std(dataset)
-# print(f"Calculated mean: {mean}, std: {std}")
+# Calculate mean and std
+dataset = ImageMaskDataset('ds/train/images', ['ds/train/masks_class_0'], transform=transforms.ToTensor())
+mean, std = calculate_mean_std(dataset)
+print(f"Calculated mean: {mean}, std: {std}")
 
 # Define transformations
 transform = transforms.Compose([
@@ -31,12 +29,12 @@ transform = transforms.Compose([
 ])
 
 # Train and test model
-shutil.rmtree('segm/test_results', ignore_errors=True)
-if os.path.exists('segm/best_model.model'):
-    os.remove('segm/best_model.model')
+shutil.rmtree(model_directory, ignore_errors=True)
+if os.path.exists(model_directory):
+    os.remove(model_directory)
 
 # Training function with performance plotting, saving the best model, and early stopping
-def train_model(model, train_loader, val_loader, criterion, optimizer, num_epochs, model_save_path='segm/best_model.model'):
+def train_model(model, train_loader, val_loader, criterion, optimizer, num_epochs, model_save_path):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     model = model.to(device)
     best_loss = float('inf')
@@ -157,21 +155,28 @@ plt.switch_backend('Agg')
 
 # Create datasets and dataloaders
 if n_class == 1:
-    train_dataset = ImageMaskDataset('ds/train/images', ['ds/train/masks_bone'], transform)
-    val_dataset = ImageMaskDataset('ds/validation/images', ['ds/validation/masks_bone'], transform)
-    test_dataset = ImageMaskDataset('ds/test/images', ['ds/test/masks_bone'], transform)
+    train_dataset = ImageMaskDataset('ds/train/images', ['ds/train/masks_class_0'], transform)
+    val_dataset = ImageMaskDataset('ds/validation/images', ['ds/validation/masks_class_0'], transform)
+    test_dataset = ImageMaskDataset('ds/test/images', ['ds/test/masks_class_0'], transform)
 
-    criterion = DiceLoss()
-    #criterion = nn.BCELoss()
+    # criterion = DiceLoss()
+    criterion = nn.BCELoss()
 
-if n_class == 3:
-    train_dataset = ImageMaskDataset('ds/train/images', ['ds/train/masks_bone', 'ds/train/masks_muscle_layer1', 'ds/train/masks_muscle_layer2'], transform)
-    val_dataset = ImageMaskDataset('ds/validation/images', ['ds/validation/masks_bone', 'ds/validation/masks_muscle_layer1', 'ds/validation/masks_muscle_layer2'], transform)
-    test_dataset = ImageMaskDataset('ds/test/images', ['ds/test/masks_bone', 'ds/test/masks_muscle_layer1', 'ds/test/masks_muscle_layer2'], transform)
+if n_class == 2:
+    train_dataset = ImageMaskDataset('ds/train/images', ['ds/train/masks_class_0', 'ds/train/masks_class_1'], transform)
+    val_dataset = ImageMaskDataset('ds/validation/images', ['ds/validation/masks_class_0', 'ds/validation/masks_class_1'], transform)
+    test_dataset = ImageMaskDataset('ds/test/images', ['ds/test/masks_class_0', 'ds/test/masks_class_1'], transform)
 
     # criterion = DiceLoss()
     criterion = nn.CrossEntropyLoss()
-    # criterion = CombinedLoss()
+
+if n_class == 3:
+    train_dataset = ImageMaskDataset('ds/train/images', ['ds/train/masks_class_0', 'ds/train/masks_class_1', 'ds/train/masks_class_2'], transform)
+    val_dataset = ImageMaskDataset('ds/validation/images', ['ds/validation/masks_class_0', 'ds/validation/masks_class_1', 'ds/validation/masks_class_2'], transform)
+    test_dataset = ImageMaskDataset('ds/test/images', ['ds/test/masks_class_0', 'ds/test/masks_class_1', 'ds/test/masks_class_2'], transform)
+
+    # criterion = DiceLoss()
+    criterion = nn.CrossEntropyLoss()
 
 train_loader = DataLoader(train_dataset, batch_size, shuffle=True)
 val_loader = DataLoader(val_dataset, batch_size, shuffle=False)
@@ -181,4 +186,4 @@ test_loader = DataLoader(test_dataset, batch_size, shuffle=False)
 model = UNet(n_class, depth, start_filters, dropout_prob)
 optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 model = train_model(model, train_loader, val_loader, criterion, optimizer, num_epochs)
-test_model(model, model_save_path, test_loader, n_class, output_model_test)
+test_model(model, model_directory, test_loader, n_class, output_model_test)

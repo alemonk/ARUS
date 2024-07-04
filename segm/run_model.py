@@ -23,9 +23,6 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from helper_functions import resize_image, numerical_sort
 from params import *
 
-# Calculate mean and std
-image_dir = 'ds/test-forearm-ventral'
-
 # Define transformations
 final_transform = transforms.Compose([
     transforms.ToTensor(),
@@ -41,7 +38,7 @@ def load_and_transform_image(image_path, transform, img_height):
         image = transform(image)
     return image
 
-def run_unet_model(model_path, image_dir, transform, n_class, output_segmentation):
+def run_unet_model(model_path, input_segmentation, transform, n_class, output_segmentation):
     # Load the saved best model
     model = UNet(n_class, depth, start_filters, dropout_prob)
     model.load_state_dict(torch.load(model_path))
@@ -51,11 +48,11 @@ def run_unet_model(model_path, image_dir, transform, n_class, output_segmentatio
     colors = get_colors(n_class)
 
     # List all image files in the directory
-    image_files = sorted([f for f in os.listdir(image_dir) if os.path.isfile(os.path.join(image_dir, f))], key=numerical_sort)
+    image_files = sorted([f for f in os.listdir(input_segmentation) if os.path.isfile(os.path.join(input_segmentation, f))], key=numerical_sort)
 
     with torch.no_grad():
         for i, image_file in enumerate(image_files):
-            image_path = os.path.join(image_dir, image_file)
+            image_path = os.path.join(input_segmentation, image_file)
             image = load_and_transform_image(image_path, transform, img_height).unsqueeze(0).float()  # Add batch dimension
             output = model(image)
             output = torch.sigmoid(output)  # Apply sigmoid to get predictions in range [0, 1]
@@ -78,4 +75,4 @@ def run_unet_model(model_path, image_dir, transform, n_class, output_segmentatio
 
 shutil.rmtree(output_segmentation, ignore_errors=True)
 time.sleep(1)
-run_unet_model('segm/best_model.model', image_dir, final_transform, n_class, output_segmentation)
+run_unet_model(model_directory, input_segmentation, final_transform, n_class, output_segmentation)
