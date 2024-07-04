@@ -14,7 +14,7 @@ import shutil
 import numpy as np
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from helper_functions import plot_performance, ImageMaskDataset, calculate_mean_std
+from helper_functions import plot_performance, ImageMaskDataset, calculate_mean_std, DiceLoss
 from params import *
 
 # Calculate mean and std
@@ -155,35 +155,31 @@ plt.switch_backend('Agg')
 
 # Create datasets and dataloaders
 if n_class == 1:
-    train_dataset = ImageMaskDataset('ds/train/images', ['ds/train/masks_class_0'], transform)
-    val_dataset = ImageMaskDataset('ds/validation/images', ['ds/validation/masks_class_0'], transform)
-    test_dataset = ImageMaskDataset('ds/test/images', ['ds/test/masks_class_0'], transform)
-
     # criterion = DiceLoss()
     criterion = nn.BCELoss()
-
-if n_class == 2:
-    train_dataset = ImageMaskDataset('ds/train/images', ['ds/train/masks_class_0', 'ds/train/masks_class_1'], transform)
-    val_dataset = ImageMaskDataset('ds/validation/images', ['ds/validation/masks_class_0', 'ds/validation/masks_class_1'], transform)
-    test_dataset = ImageMaskDataset('ds/test/images', ['ds/test/masks_class_0', 'ds/test/masks_class_1'], transform)
-
+else:
     # criterion = DiceLoss()
     criterion = nn.CrossEntropyLoss()
 
-if n_class == 3:
-    train_dataset = ImageMaskDataset('ds/train/images', ['ds/train/masks_class_0', 'ds/train/masks_class_1', 'ds/train/masks_class_2'], transform)
-    val_dataset = ImageMaskDataset('ds/validation/images', ['ds/validation/masks_class_0', 'ds/validation/masks_class_1', 'ds/validation/masks_class_2'], transform)
-    test_dataset = ImageMaskDataset('ds/test/images', ['ds/test/masks_class_0', 'ds/test/masks_class_1', 'ds/test/masks_class_2'], transform)
+# Function to create dataset paths
+def create_dataset_paths(base_dir, n_class):
+    return [os.path.join(base_dir, f'masks_class_{i}') for i in range(n_class)]
 
-    # criterion = DiceLoss()
-    criterion = nn.CrossEntropyLoss()
-
+# Create datasets and dataloaders
+train_mask_paths = create_dataset_paths('ds/train', n_class)
+train_dataset = ImageMaskDataset('ds/train/images', train_mask_paths, transform)
 train_loader = DataLoader(train_dataset, batch_size, shuffle=True)
+
+val_mask_paths = create_dataset_paths('ds/validation', n_class)
+val_dataset = ImageMaskDataset('ds/validation/images', val_mask_paths, transform)
 val_loader = DataLoader(val_dataset, batch_size, shuffle=False)
+
+test_mask_paths = create_dataset_paths('ds/test', n_class)
+test_dataset = ImageMaskDataset('ds/test/images', test_mask_paths, transform)
 test_loader = DataLoader(test_dataset, batch_size, shuffle=False)
 
 # Initialize model
 model = UNet(n_class, depth, start_filters, dropout_prob)
 optimizer = optim.Adam(model.parameters(), lr=learning_rate)
-model = train_model(model, train_loader, val_loader, criterion, optimizer, num_epochs)
+model = train_model(model, train_loader, val_loader, criterion, optimizer, num_epochs, model_directory)
 test_model(model, model_directory, test_loader, n_class, output_model_test)

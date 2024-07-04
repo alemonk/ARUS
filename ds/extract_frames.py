@@ -44,6 +44,6 @@ def extract_frames(video_paths, output_folder, frame_interval=1):
 
 video_paths = [f'dataset_videos/test-{dt_name}.mov']
 output_folder = f'ds/test-{dt_name}'
-frame_interval = 1
+frame_interval = 3
 
 extract_frames(video_paths, output_folder, frame_interval)

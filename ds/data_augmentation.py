@@ -1,10 +1,21 @@
 import os
 from PIL import Image, ImageOps
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from params import n_class
 
 # Define the directories
 BASE_DIR = 'ds'
 SPLITS = ['train', 'validation', 'test']
-SUBDIRS = ['images', 'masks_muscle_layer1', 'masks_muscle_layer2', 'masks_bone']
+
+# Generate subdirectory names dynamically based on the number of classes
+def generate_subdirs(num_classes):
+    subdirs = ['images']
+    for i in range(num_classes):
+        subdirs.append(f'masks_class_{i}')
+    return subdirs
+
+SUBDIRS = generate_subdirs(n_class)
 
 # Function to horizontally flip images in a directory
 def flip_images_horizontally(directory):
@@ -28,4 +39,4 @@ for split in SPLITS:
     split_path = os.path.join(BASE_DIR, split)
     flip_images_horizontally(split_path)
 
-print("Flipping complete for all images in test, train, and validation sets.")
+print("Flipping complete for all images in train, validation, and test sets.")

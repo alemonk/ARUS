@@ -10,7 +10,7 @@ filter = ['labeled', 'reviewed']
 n_class = 1
 depth = 3
 start_filters = 64
-dropout_prob = 0.3
+dropout_prob = 0.25
 
 # Model hyperparameters
 learning_rate = 0.0005
