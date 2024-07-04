@@ -39,17 +39,12 @@ def extract_frames(video_paths, output_folder, frame_interval=1):
     
     print(f"Extracted {extracted_count} frames in total and saved to {output_folder}")
 
-# Example usage
-video_paths = [
-                'dataset_videos/forearm-dorsal-cropped (1).mov',
-                # 'dataset_videos/forearm-dorsal-cropped (2).mov',
-                'dataset_videos/forearm-dorsal-cropped (3).mov',
-                # 'dataset_videos/forearm-dorsal-cropped (4).mov',
-                'dataset_videos/forearm-dorsal-cropped (5).mov',
-                'dataset_videos/forearm-dorsal-cropped (6).mov',
-                'dataset_videos/forearm-dorsal-cropped (7).mov',
-            ]
-output_folder = 'ds/forearm-dorsal-dataset'
-frame_interval = 20
+# video_paths = ['dataset_videos/dataset-forearm-ventral.mov']
+# output_folder = 'ds/dataset-forearm-ventral'
+# frame_interval = 20
+
+video_paths = ['dataset_videos/video-trimmed.mov']
+output_folder = 'ds/test-forearm-ventral'
+frame_interval = 1
 
 extract_frames(video_paths, output_folder, frame_interval)

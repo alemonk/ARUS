@@ -3,10 +3,9 @@ calibration/robot_calibration/
 calibration/camera_matrix.npy
 calibration/dist_coeffs.npy
 
-ds/forearm-dorsal-dataset
+ds/dataset-forearm-ventral
+ds/test-forearm-ventral
 ds/test
-ds/test_forearm
-ds/test_forearm_copy
 ds/train
 ds/validation
 
@@ -31,3 +30,4 @@ myenv/
 .DS_Store
 __pycache__
 best_model.pth
+segments_key.py

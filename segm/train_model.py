@@ -102,7 +102,7 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, num_epoch
 
     return model
 
-def test_model(model, model_path, test_loader, n_class, output_dir='segm/test_results'):
+def test_model(model, model_path, test_loader, n_class, output_model_test):
     # Load the saved best model
     model.load_state_dict(torch.load(model_path))
     model.eval()
@@ -137,8 +137,8 @@ def test_model(model, model_path, test_loader, n_class, output_dir='segm/test_re
                     ax[k, 2].set_title(f'Predicted Mask {k+1}')
                     ax[k, 2].axis('off')
                 
-                os.makedirs(f'{output_dir}/comparison', exist_ok=True)
-                plt.savefig(os.path.join(f'{output_dir}/comparison', f'test_result_{i * test_loader.batch_size + j}.png'))
+                os.makedirs(f'{output_model_test}/comparison', exist_ok=True)
+                plt.savefig(os.path.join(f'{output_model_test}/comparison', f'test_result_{i * test_loader.batch_size + j}.png'))
                 plt.close(fig)
 
                 output = outputs[j].cpu().numpy()
@@ -149,8 +149,8 @@ def test_model(model, model_path, test_loader, n_class, output_dir='segm/test_re
 
                 plt.imshow(color_mask)
                 plt.axis('off')
-                os.makedirs(f'{output_dir}/output_combined', exist_ok=True)
-                plt.savefig(os.path.join(f'{output_dir}/output_combined', f'{i * test_loader.batch_size + j}.png'))
+                os.makedirs(f'{output_model_test}/output_combined', exist_ok=True)
+                plt.savefig(os.path.join(f'{output_model_test}/output_combined', f'{i * test_loader.batch_size + j}.png'))
                 plt.close()
 
 plt.switch_backend('Agg')
@@ -181,4 +181,4 @@ test_loader = DataLoader(test_dataset, batch_size, shuffle=False)
 model = UNet(n_class, depth, start_filters, dropout_prob)
 optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 model = train_model(model, train_loader, val_loader, criterion, optimizer, num_epochs)
-test_model(model, model_save_path, test_loader, n_class)
+test_model(model, model_save_path, test_loader, n_class, output_model_test)

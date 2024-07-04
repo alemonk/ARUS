@@ -1,7 +1,7 @@
 import os
 
 num_poses = 382
-distance_cm = 0.045
+distance_cm = 0.073
 
 filename = 'recon/img_pose.txt'
 # Remove the files if they exist

@@ -6,6 +6,9 @@ import shutil
 import time
 import random
 from PIL import Image
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from segments_key import key
 
 user = 'ale'
 dt_name = 'forearm-ventral-final-clone'
@@ -16,8 +19,7 @@ filter = ['labeled', 'reviewed']
 dt_name_full = f'{user}/{dt_name}'
 
 # Initialize a SegmentsDataset from the release file
-# client = SegmentsClient('f9a1e7f6dab2ca00db793d1e45ca06f40d10173e')
-client = SegmentsClient('9029be691e4ec4b844556fc3a408b69193b56e13')
+client = SegmentsClient(key)
 
 release = client.get_release(dt_name_full, version)
 dataset = SegmentsDataset(release, labelset=label_set, filter_by=filter)

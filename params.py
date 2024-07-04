@@ -13,6 +13,10 @@ threshold = 0.75
 img_height = 128
 mean = 0.17347709834575653
 std = 0.2102048248052597
+
+# Directories
+output_model_test = 'segm/test_results'
+output_segmentation = 'segm/test_forearm_results'
 model_save_path = 'segm/best_model.model'
 
 # us_reconstruction

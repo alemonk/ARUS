@@ -24,7 +24,7 @@ from helper_functions import resize_image, numerical_sort
 from params import *
 
 # Calculate mean and std
-image_dir = 'ds/test_forearm'
+image_dir = 'ds/test-forearm-ventral'
 
 # Define transformations
 final_transform = transforms.Compose([
@@ -41,7 +41,7 @@ def load_and_transform_image(image_path, transform, img_height):
         image = transform(image)
     return image
 
-def run_unet_model(model_path, image_dir, transform, n_class, output_dir):
+def run_unet_model(model_path, image_dir, transform, n_class, output_segmentation):
     # Load the saved best model
     model = UNet(n_class, depth, start_filters, dropout_prob)
     model.load_state_dict(torch.load(model_path))
@@ -68,15 +68,14 @@ def run_unet_model(model_path, image_dir, transform, n_class, output_dir):
             for k in range(output.shape[0]):  # Loop over each channel
                 color_mask[output[k] > threshold] = colors[k % len(colors)]  # Use color corresponding to the class
 
-            os.makedirs(f'{output_dir}/output_segmentation', exist_ok=True)
-            Image.fromarray(color_mask).save(os.path.join(f'{output_dir}/output_segmentation', f'{i}.png'))
+            os.makedirs(f'{output_segmentation}/output_segmentation', exist_ok=True)
+            Image.fromarray(color_mask).save(os.path.join(f'{output_segmentation}/output_segmentation', f'{i}.png'))
 
             for k in range(output.shape[0]):  # Loop over each channel
                 gray_mask = (output[k] * 255).astype(np.uint8)
-                os.makedirs(f'{output_dir}/class{k}', exist_ok=True)
-                Image.fromarray(gray_mask).save(os.path.join(f'{output_dir}/class{k}', f'{i}.png'))
+                os.makedirs(f'{output_segmentation}/class{k}', exist_ok=True)
+                Image.fromarray(gray_mask).save(os.path.join(f'{output_segmentation}/class{k}', f'{i}.png'))
 
-output_dir = 'segm/test_forearm_results'
-shutil.rmtree(output_dir, ignore_errors=True)
+shutil.rmtree(output_segmentation, ignore_errors=True)
 time.sleep(1)
-run_unet_model('segm/best_model.model', image_dir, final_transform, n_class, output_dir)
+run_unet_model('segm/best_model.model', image_dir, final_transform, n_class, output_segmentation)
