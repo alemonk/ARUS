@@ -4,7 +4,6 @@ import rospy
 from PIL import Image as PILImage
 import torch
 from torchvision import transforms
-import re
 import time
 import threading
 import queue
@@ -14,11 +13,15 @@ from my_package.msg import ImagePose
 import numpy as np
 from helper_functions import resize_image
 from params import *
+import concurrent.futures
+
+# Check for CUDA availability
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 def run_model(model_class, model_path, image):
     # Instantiate model, loss function, and optimizer
-    model = model_class(n_class)
-    model.load_state_dict(torch.load(model_path))
+    model = model_class(n_class, depth, start_filters, dropout_prob).to(device)
+    model.load_state_dict(torch.load(model_path, map_location=device))
     model.eval()
 
     final_transform = transforms.Compose([
@@ -28,7 +31,7 @@ def run_model(model_class, model_path, image):
 
     # Load and preprocess image
     image = resize_image(image, img_height)
-    image_tensor = final_transform(image).unsqueeze(0)
+    image_tensor = final_transform(image).unsqueeze(0).to(device)
 
     colors = get_colors(n_class)
 
@@ -57,6 +60,8 @@ class ImageSegmentationNode:
         self.subscriber = rospy.Subscriber(self.image_topic, ImagePose, self.callback)
         self.publisher = rospy.Publisher(self.processed_image_topic, ImagePose, queue_size=100)
         
+        self.processing_executor = concurrent.futures.ThreadPoolExecutor(max_workers=4)
+
         self.processing_thread = threading.Thread(target=self.process_images)
         self.processing_thread.daemon = True
         self.processing_thread.start()
@@ -68,31 +73,34 @@ class ImageSegmentationNode:
         while not rospy.is_shutdown():
             if not self.image_queue.empty():
                 image_pose_msg = self.image_queue.get()
-                image = image_pose_msg.image
-                pose = image_pose_msg.pose
-                title = image_pose_msg.title
-
-                try:
-                    cv_image = self.bridge.imgmsg_to_cv2(image, "mono8")
-                    pil_image = PILImage.fromarray(cv_image)
-                    processed_image = run_model(UNet, self.model_path, pil_image)
-
-                    # Convert processed image back to ROS image message
-                    processed_ros_image = self.bridge.cv2_to_imgmsg(processed_image, encoding="rgb8")
-
-                    # Publish the processed image along with the pose and title
-                    processed_image_pose_msg = ImagePose()
-                    processed_image_pose_msg.image = processed_ros_image
-                    processed_image_pose_msg.pose = pose
-                    processed_image_pose_msg.title = title
-                    self.publisher.publish(processed_image_pose_msg)
-
-                    rospy.loginfo(f"Segmentation completed on image {title}")
-
-                except Exception as e:
-                    rospy.logerr(f"Error processing image: {e}")
+                self.processing_executor.submit(self.process_single_image, image_pose_msg)
             else:
-                time.sleep(0.1)
+                time.sleep(0.01)
+
+    def process_single_image(self, image_pose_msg):
+        image = image_pose_msg.image
+        pose = image_pose_msg.pose
+        title = image_pose_msg.title
+
+        try:
+            cv_image = self.bridge.imgmsg_to_cv2(image, "mono8")
+            pil_image = PILImage.fromarray(cv_image)
+            processed_image = run_model(UNet, self.model_path, pil_image)
+
+            # Convert processed image back to ROS image message
+            processed_ros_image = self.bridge.cv2_to_imgmsg(processed_image, encoding="rgb8")
+
+            # Publish the processed image along with the pose and title
+            processed_image_pose_msg = ImagePose()
+            processed_image_pose_msg.image = processed_ros_image
+            processed_image_pose_msg.pose = pose
+            processed_image_pose_msg.title = title
+            self.publisher.publish(processed_image_pose_msg)
+
+            rospy.loginfo(f"Segmentation completed on image {title}")
+
+        except Exception as e:
+            rospy.logerr(f"Error processing image: {e}")
 
 def main():
     node = ImageSegmentationNode()

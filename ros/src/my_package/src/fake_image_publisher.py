@@ -68,7 +68,7 @@ def collect_images(image_dir):
     return images_with_poses
 
 def publish_images_randomized(images_with_poses, pub):
-    rate = rospy.Rate(2) # Hz
+    rate = rospy.Rate(15) # Hz
 
     if randomize_images:
         random.shuffle(images_with_poses)

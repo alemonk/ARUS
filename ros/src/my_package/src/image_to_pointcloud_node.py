@@ -110,7 +110,7 @@ class PointCloudGeneratorNode:
             image_height_pixels = cv_img.shape[0]
 
             # Process the image to generate the point cloud
-            process_image(cv_img, pose, sensor_to_image_transf, image_height_pixels, colors, store_full_image)
+            process_image(cv_img, pose, sensor_to_image_transf, image_height_pixels, colors, only_borders_to_pointcloud)
             rospy.loginfo(f'Pointcloud conversion completed on image {title}')
 
         except Exception as e:
