@@ -14,8 +14,8 @@ source set_config.sh $choice
 
 source myenv/bin/activate
 
-python3 segm/run_model.py
-python3 recon/us_reconstruction.py
-python3 recon/plot_pointcloud.py
+# python3 ds/download_and_organize_dataset.py
+# python3 ds/data_augmentation.py
+python3 ds/extract_frames.py
 
 source deactivate
