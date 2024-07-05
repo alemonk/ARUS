@@ -1,13 +1,6 @@
-
-# Dataset parameters
-user = 'alemonk'
-dt_name = 'phantom3'
-version = 'v0.2'
-label_set = 'ground-truth'
-filter = ['labeled', 'reviewed']
+import os
 
 # UNet parameters
-n_class = 1
 depth = 3
 start_filters = 64
 dropout_prob = 0.25
@@ -21,20 +14,28 @@ img_height = 128
 mean = 0.17347709834575653
 std = 0.2102048248052597
 
-# Directories
-input_segmentation = f'ds/test-{dt_name}'
-output_segmentation = f'segm/results-test-{dt_name}'
-output_model_train = f'segm/results-training-{dt_name}'
-model_directory = f'segm/model-{n_class}class-{dt_name}.model'
+# Dataset parameters from environment variables
+user = os.getenv('USER')
+dt_name = os.getenv('DT_NAME')
+version = os.getenv('VERSION')
+label_set = os.getenv('LABEL_SET')
+filter = os.getenv('FILTER').split()
+n_class = int(os.getenv('N_CLASS'))
+
+# Directories from environment variables
+input_segmentation = os.getenv('INPUT_SEGMENTATION')
+output_segmentation = os.getenv('OUTPUT_SEGMENTATION')
+output_model_train = os.getenv('OUTPUT_MODEL_TRAIN')
+model_directory = os.getenv('MODEL_DIRECTORY')
 
 # us_reconstruction
-poses_filename = f'recon/img_pose.txt'
-img_folder_path = f'{output_segmentation}/output_segmentation'
-output_pointcloud_dir = f'recon/pointclouds/{dt_name}'
-imgs_height_cm = 6.0
+poses_filename = os.getenv('POSES_FILENAME')
+img_folder_path = os.getenv('IMG_FOLDER_PATH')
+output_pointcloud_dir = os.getenv('OUTPUT_POINTCLOUD_DIR')
+imgs_height_cm = float(os.getenv('IMGS_HEIGHT_CM'))
 
 # plot_pointcloud
-pointcloud_filenames = [f'{output_pointcloud_dir}/{i}.txt' for i in range(n_class)]
+pointcloud_filenames = os.getenv('POINTCLOUD_FILENAMES').split()
 
 def get_colors(n):
     colors = [
@@ -44,10 +45,3 @@ def get_colors(n):
         [255, 0, 0]     # Red
     ]
     return colors[0:n]
-
-# sensor_to_image_transf = np.array([
-#     [0.98501951, -0.09266497,  0.04806903, 205.29482151],
-#     [-0.1614265, -0.99285119, -0.07972393,  13.92010423],
-#     [0.06064688,  0.07523109, -0.99293638, -43.1846821],
-#     [0, 0, 0, 1]
-# ])
