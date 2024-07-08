@@ -43,7 +43,7 @@ def extract_frames(video_paths, output_folder, frame_interval=1):
     print(f"Extracted {extracted_count} frames in total and saved to {output_folder}")
 
 video_paths = [f'dataset_videos/test-{dt_name}.mov']
-output_folder = f'ds/test-{dt_name}'
-frame_interval = 3
+output_folder = f'out/{dt_name}/test-unseen_data'
+frame_interval = 1
 
 extract_frames(video_paths, output_folder, frame_interval)

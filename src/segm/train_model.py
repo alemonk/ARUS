@@ -18,7 +18,7 @@ from helper_functions import plot_performance, ImageMaskDataset, calculate_mean_
 from params import *
 
 # Calculate mean and std
-dataset = ImageMaskDataset('ds/train/images', ['ds/train/masks_class_0'], transform=transforms.ToTensor())
+dataset = ImageMaskDataset(f'out/{dt_name}/train/images', [f'out/{dt_name}/train/masks_class_0'], transform=transforms.ToTensor())
 mean, std = calculate_mean_std(dataset)
 print(f"Calculated mean: {mean}, std: {std}")
 
@@ -165,16 +165,16 @@ def create_dataset_paths(base_dir, n_class):
     return [os.path.join(base_dir, f'masks_class_{i}') for i in range(n_class)]
 
 # Create datasets and dataloaders
-train_mask_paths = create_dataset_paths('ds/train', n_class)
-train_dataset = ImageMaskDataset('ds/train/images', train_mask_paths, transform)
+train_mask_paths = create_dataset_paths(f'out/{dt_name}/train', n_class)
+train_dataset = ImageMaskDataset(f'out/{dt_name}/train/images', train_mask_paths, transform)
 train_loader = DataLoader(train_dataset, batch_size, shuffle=True)
 
-val_mask_paths = create_dataset_paths('ds/validation', n_class)
-val_dataset = ImageMaskDataset('ds/validation/images', val_mask_paths, transform)
+val_mask_paths = create_dataset_paths(f'out/{dt_name}/validation', n_class)
+val_dataset = ImageMaskDataset(f'out/{dt_name}/validation/images', val_mask_paths, transform)
 val_loader = DataLoader(val_dataset, batch_size, shuffle=False)
 
-test_mask_paths = create_dataset_paths('ds/test', n_class)
-test_dataset = ImageMaskDataset('ds/test/images', test_mask_paths, transform)
+test_mask_paths = create_dataset_paths(f'out/{dt_name}/test', n_class)
+test_dataset = ImageMaskDataset(f'out/{dt_name}/test/images', test_mask_paths, transform)
 test_loader = DataLoader(test_dataset, batch_size, shuffle=False)
 
 # Initialize model

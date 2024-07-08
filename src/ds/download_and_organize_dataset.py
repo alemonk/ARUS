@@ -48,9 +48,9 @@ if os.path.exists(f'export_coco-panoptic_{user}_{dt_name}_{version}.json'):
     os.remove(f'export_coco-panoptic_{user}_{dt_name}_{version}.json')
 
 print("Processing complete. Images and masks moved to their respective folders.")
-shutil.rmtree('ds/train', ignore_errors=True)
-shutil.rmtree('ds/validation', ignore_errors=True)
-shutil.rmtree('ds/test', ignore_errors=True)
+shutil.rmtree(f'out/{dt_name}/train', ignore_errors=True)
+shutil.rmtree(f'out/{dt_name}/validation', ignore_errors=True)
+shutil.rmtree(f'out/{dt_name}/test', ignore_errors=True)
 
 time.sleep(1)
 
@@ -111,9 +111,9 @@ def create_masks_for_colors(mask_path, split, file_index):
     
     # Save the mask images
     for class_name, mask in list(masks.items())[:n_class]:
-        if not os.path.exists(f'ds/{split}/masks_{class_name}'):
-            os.makedirs(f'ds/{split}/masks_{class_name}', exist_ok=True)
-        mask.save(os.path.join(f'ds/{split}/masks_{class_name}', f'{file_index}.png'))
+        if not os.path.exists(f'out/{dt_name}/{split}/masks_{class_name}'):
+            os.makedirs(f'out/{dt_name}/{split}/masks_{class_name}', exist_ok=True)
+        mask.save(os.path.join(f'out/{dt_name}/{split}/masks_{class_name}', f'{file_index}.png'))
 
 def process_and_copy_files(file_list, split):
     for i, file in enumerate(file_list):
@@ -122,9 +122,9 @@ def process_and_copy_files(file_list, split):
         mask_src_path = os.path.join(OUTPUT_MASKS_DIR, f'{base_filename}_{MASKS_FILENAME_SUFFIX}.png')
 
         if os.path.exists(image_src_path) and os.path.exists(mask_src_path):
-            if not os.path.exists(f'ds/{split}/images'):
-                os.makedirs(f'ds/{split}/images', exist_ok=True)
-            shutil.copy(image_src_path, os.path.join(f'ds/{split}/images', f'{i}.png'))
+            if not os.path.exists(f'out/{dt_name}/{split}/images'):
+                os.makedirs(f'out/{dt_name}/{split}/images', exist_ok=True)
+            shutil.copy(image_src_path, os.path.join(f'out/{dt_name}/{split}/images', f'{i}.png'))
             create_masks_for_colors(mask_src_path, split, i)
 
         print(f'{split} organization: {round(100 * (i + 1) / len(file_list))} %')

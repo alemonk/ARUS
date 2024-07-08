@@ -3,21 +3,11 @@ calibration/robot_calibration/
 calibration/camera_matrix.npy
 calibration/dist_coeffs.npy
 
-ds/dataset-*
-ds/test-*
-ds/test
-ds/train
-ds/validation
-
 dataset_videos/
 output/
+out/
 
-recon/img_pose.txt
-recon/pointcloud.txt
-recon/pointclouds/
-
-segm/results-*
-segm/model-*
+img_pose.txt
 
 ros/src/my_package/src/test_forearm/
 ros/src/my_package/src/test_forearm_results/

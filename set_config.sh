@@ -34,14 +34,14 @@ case $choice in
         ;;
 esac
 
-export INPUT_SEGMENTATION="ds/test-${DT_NAME}"
-export OUTPUT_SEGMENTATION="segm/results-test-${DT_NAME}"
-export OUTPUT_MODEL_TRAIN="segm/results-training-${DT_NAME}"
-export MODEL_DIRECTORY="segm/model-${N_CLASS}class-${DT_NAME}.model"
-export POSES_FILENAME="recon/img_pose.txt"
+export INPUT_SEGMENTATION="out/${DT_NAME}/test-unseen_data"
+export OUTPUT_SEGMENTATION="out/${DT_NAME}/results-test"
+export OUTPUT_MODEL_TRAIN="out/${DT_NAME}/results-training"
+export MODEL_DIRECTORY="out/${DT_NAME}/model-${N_CLASS}class.model"
+export POSES_FILENAME="src/recon/img_pose.txt"
 export IMG_FOLDER_PATH="${OUTPUT_SEGMENTATION}/output_segmentation"
-export OUTPUT_POINTCLOUD_DIR="recon/pointclouds/${DT_NAME}"
+export OUTPUT_POINTCLOUD_DIR="out/${DT_NAME}/pointclouds"
 export IMGS_HEIGHT_CM=6.0
-export POINTCLOUD_FILENAMES=$(for ((i=0; i<$N_CLASS; i++)); do echo "recon/pointclouds/${DT_NAME}/${i}.txt"; done | tr '\n' ' ')
+export POINTCLOUD_FILENAMES=$(for ((i=0; i<$N_CLASS; i++)); do echo "${OUTPUT_POINTCLOUD_DIR}/${i}.txt"; done | tr '\n' ' ')
 
 echo "Configuration set for choice $choice."

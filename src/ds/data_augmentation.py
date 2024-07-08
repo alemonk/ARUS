@@ -2,10 +2,10 @@ import os
 from PIL import Image, ImageOps
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from params import n_class
+from params import n_class, dt_name
 
 # Define the directories
-BASE_DIR = 'ds'
+BASE_DIR = f'out/{dt_name}'
 SPLITS = ['train', 'validation', 'test']
 
 # Generate subdirectory names dynamically based on the number of classes
